@@ -1,11 +1,11 @@
 'use strict';
-/* Kiểm chứng bộ giả lập mạng xấu của server.js — không cần trình duyệt.
+/* Verify the bad-network simulator in server.js — no browser needed.
  *
  *   node test/netsim.js
  *
- * Kiểm tra: (1) không cờ thì không thêm trễ và không mất gói,
- *           (2) --lag/--loss tạo đúng mức trễ và đúng tỉ lệ mất snapshot,
- *           (3) file --trace được ghi đúng.
+ * Checks: (1) no flags adds no delay and drops nothing,
+ *         (2) --lag/--loss produce the right delay and snapshot loss rate,
+ *           (3) the --trace file is written correctly.
  */
 const { spawn } = require('child_process');
 const net = require('net');
@@ -85,49 +85,49 @@ async function measure(port, count) {
 }
 
 (async () => {
-  try { fs.unlinkSync(TRACE); } catch (e) { /* chưa có file */ }
+  try { fs.unlinkSync(TRACE); } catch (e) { /* no file yet */ }
 
-  // 1) Mạng thật: không cờ thì không được thêm trễ, không được mất gói
+  // 1) Real network: no flags means no added delay and no dropped packets
   const clean = startServer(8091, []);
   if (!(await waitPort(8091))) {
-    console.error('Không khởi động được server ở cổng 8091');
+    console.error('Could not start the server on port 8091');
     process.exit(1);
   }
   const good = await measure(8091, 60);
-  ok('không cờ: nhận đủ 60 snapshot', good.received === 60, 'nhận ' + good.received);
-  ok('không cờ: trễ trung bình < 30 ms', good.mean < 30, good.mean.toFixed(1) + ' ms');
+  ok('no flags: all 60 snapshots received', good.received === 60, 'received ' + good.received);
+  ok('no flags: mean delay < 30 ms', good.mean < 30, good.mean.toFixed(1) + ' ms');
   clean.kill();
   await sleep(200);
 
-  // 2) Mạng xấu: lag 60ms + jitter, mất 20% snapshot
+  // 2) Bad network: 60ms lag + jitter, lost 20% snapshot
   const bad = startServer(8092, ['--lag', '60', '--jitter', '10', '--loss', '0.2', '--trace', TRACE]);
   if (!(await waitPort(8092))) {
-    console.error('Không khởi động được server ở cổng 8092');
+    console.error('Could not start the server on port 8092');
     process.exit(1);
   }
   const res = await measure(8092, 200);
-  ok('lag 60 ms: trễ trung bình trong khoảng 40–140 ms', res.mean > 40 && res.mean < 140, res.mean.toFixed(1) + ' ms');
+  ok('lag 60 ms: mean delay within 40–140 ms', res.mean > 40 && res.mean < 140, res.mean.toFixed(1) + ' ms');
   const dropRate = 1 - res.received / 200;
-  ok('làm rơi khoảng 20% snapshot', dropRate > 0.05 && dropRate < 0.4, (dropRate * 100).toFixed(0) + '% rơi');
-  ok('vẫn giữ được đa số snapshot', res.received > 100, res.received + '/200');
+  ok('drops roughly 20% of snapshots', dropRate > 0.05 && dropRate < 0.4, (dropRate * 100).toFixed(0) + '% dropped');
+  ok('keeps the majority of snapshots', res.received > 100, res.received + '/200');
   bad.kill();
   await sleep(350);
 
-  // 3) File vết gói tin
+  // 3) Packet trace file
   let header = '';
   let lines = 0;
   try {
     const rows = fs.readFileSync(TRACE, 'utf8').trim().split('\n');
     header = rows[0];
     lines = rows.length - 1;
-  } catch (e) { /* không có file */ }
-  ok('có file vết gói tin', lines > 100, lines + ' dòng');
-  ok('header CSV đúng', header === 'ms,kind,bytes,delay_ms,dropped', header);
-  try { fs.unlinkSync(TRACE); } catch (e) { /* bỏ qua */ }
+  } catch (e) { /* missing file */ }
+  ok('packet trace file exists', lines > 100, lines + ' rows');
+  ok('CSV header correct', header === 'ms,kind,bytes,delay_ms,dropped', header);
+  try { fs.unlinkSync(TRACE); } catch (e) { /* dropped qua */ }
 
-  console.log(failed ? '\n' + failed + ' kiểm tra THẤT BẠI' : '\nBộ giả lập mạng hoạt động đúng.');
+  console.log(failed ? '\n' + failed + ' checks FAILED' : '\nThe network simulator works correctly.');
   process.exit(failed ? 1 : 0);
 })().catch((e) => {
-  console.error('Lỗi kiểm thử:', e.message);
+  console.error('Test error:', e.message);
   process.exit(1);
 });

@@ -1,8 +1,8 @@
 'use strict';
-/* Đêm Xác Sống — máy chủ co-op.
- * Nhiệm vụ: phục vụ file tĩnh + trung chuyển gói tin giữa các máy trong cùng phòng.
- * Mô hình: host-authoritative (một máy làm chủ, mô phỏng thế giới, phát snapshot),
- * server chỉ relay + bầu host + giữ phòng, nên độ trễ thêm vào gần như bằng 0.
+/* Đêm Xác Sống — co-op server.
+ * Job: serve static files + relay packets between machines in the same room.
+ * Model: host-authoritative (one machine is the host, simulates the world, publishes snapshots),
+ * the server only relays, elects the host and holds rooms, so added latency is near zero.
  */
 const http = require('http');
 const fs = require('fs');
@@ -12,7 +12,7 @@ let WebSocketServer;
 try {
   ({ WebSocketServer } = require('ws'));
 } catch (err) {
-  console.error('[server] Thiếu gói "ws". Chạy: npm install rồi thử lại.');
+  console.error('[server] Missing the "ws" package. Run npm install and try again.');
   process.exit(1);
 }
 
@@ -30,8 +30,8 @@ const MIME = {
   '.webmanifest': 'application/manifest+json',
 };
 
-/* --------------------------------------------------------------- giả lập mạng xấu
- * Mặc định TẮT hoàn toàn: không cờ thì relay chạy y như cũ, không thêm setTimeout nào.
+/* --------------------------------------------------------------- bad-network simulation
+ * Off by default: with no flags the relay behaves exactly as before, not one setTimeout.
  *   node server.js --lag 80 --jitter 15 --loss 0.02 --dup 0.005 --reorder 0.01
  *   node server.js --lag 150 --loss 0.03 --trace docs/trace-xau.csv
  */
@@ -71,17 +71,17 @@ function logTrace(kind, bytes, delay, dropped) {
   traceOut.write(Date.now() + ',' + kind + ',' + bytes + ',' + delay + ',' + dropped + '\n');
 }
 
-/** Gửi 1 khung văn bản qua lớp giả lập (hoặc gửi thẳng nếu tắt). */
+/** Send one text frame through the simulator (or straight through when off). */
 function rawSend(ws, raw, kind) {
   if (!ws || ws.readyState !== 1) return;
   const bytes = Buffer.byteLength(raw, 'utf8');
   if (!SIM_ON) {
-    try { ws.send(raw); } catch (e) { /* socket chết */ }
+    try { ws.send(raw); } catch (e) { /* dead socket */ }
     return;
   }
-  // Chỉ snapshot là dữ liệu "dùng một lần" (gói sau thay gói trước). Input, sự kiện,
-  // cứu đồng đội, chia thưởng phải tới đủ như TCP thật — nếu bỏ chúng thì ta đang test
-  // một lỗi không tồn tại trong đời thực.
+  // Only snapshots are disposable (a later packet replaces an earlier one). Input, events,
+  // revives and kill rewards must always arrive, as with real TCP — dropping them would be
+  // testing a bug that does not exist in the real world.
   const disposable = kind === 's';
   if (disposable && SIM.loss && Math.random() < SIM.loss) {
     simStat.dropped++;
@@ -89,7 +89,7 @@ function rawSend(ws, raw, kind) {
     return;
   }
   let d = SIM.lag + (SIM.jitter ? (Math.random() * 2 - 1) * SIM.jitter : 0);
-  if (disposable && SIM.reorder && Math.random() < SIM.reorder) d += 20 + Math.random() * 60; // đẩy lùi để gói sau vượt lên
+  if (disposable && SIM.reorder && Math.random() < SIM.reorder) d += 20 + Math.random() * 60; // push back so later packets overtake it
   d = Math.max(0, Math.round(d));
   simStat.sent++;
   simStat.bytes += bytes;
@@ -97,7 +97,7 @@ function rawSend(ws, raw, kind) {
   logTrace(kind, bytes, d, 0);
   const deliver = () => {
     if (ws.readyState !== 1) return;
-    try { ws.send(raw); } catch (e) { /* socket chết */ }
+    try { ws.send(raw); } catch (e) { /* dead socket */ }
   };
   if (d > 0) setTimeout(deliver, d);
   else deliver();
@@ -111,7 +111,7 @@ if (SIM_ON) {
   const timer = setInterval(() => {
     if (!simStat.sent && !simStat.dropped) return;
     const avg = simStat.delaySum / (simStat.sent || 1);
-    console.log(`[netsim] ${simStat.sent} gói · bỏ ${simStat.dropped} · nhân bản ${simStat.dup} · trễ TB ${avg.toFixed(1)} ms · ${(simStat.bytes / 1024).toFixed(1)} KB`);
+    console.log(`[netsim] ${simStat.sent} packets · dropped ${simStat.dropped} · duplicated ${simStat.dup} · mean delay ${avg.toFixed(1)} ms · ${(simStat.bytes / 1024).toFixed(1)} KB`);
     simStat.sent = simStat.dropped = simStat.dup = simStat.delaySum = simStat.bytes = 0;
   }, 10000);
   timer.unref?.();
@@ -129,7 +129,7 @@ const server = http.createServer((req, res) => {
   fs.readFile(file, (err, buf) => {
     if (err) {
       res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-      res.end('Không tìm thấy: ' + urlPath);
+      res.end('Not found: ' + urlPath);
       return;
     }
     res.writeHead(200, {
@@ -143,7 +143,7 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({
   server,
   path: '/ws',
-  perMessageDeflate: false, // nén làm tăng độ trễ từng gói — không dùng cho game realtime
+  perMessageDeflate: false, // compression adds per-packet latency — off for a realtime game
   maxPayload: 1 << 20,
   clientTracking: true,
 });
@@ -176,7 +176,7 @@ function joinRoom(ws, key, name) {
   const member = {
     ws,
     id: nextPeerId++,
-    name: String(name || 'khách').slice(0, 16),
+    name: String(name || 'guest').slice(0, 16),
     presence: null,
   };
   ws.meta = member;
@@ -200,7 +200,7 @@ function joinRoom(ws, key, name) {
   const peers = { t: 'peers', l: rosterOf(room), h: room.host.meta ? room.host.meta.id : 0 };
   broadcast(room, peers);
 
-  // host cần biết thành viên mới để tạo "bóng" người chơi
+  // the host needs to know about new members to create "shadow" player
   if (room.host !== ws) {
     send(room.host, { t: 'join', i: member.id, n: member.name });
   } else {
@@ -208,7 +208,7 @@ function joinRoom(ws, key, name) {
       if (m.ws !== ws) send(ws, { t: 'join', i: m.id, n: m.name });
     }
   }
-  console.log(`[phòng ${key}] +${member.name}#${member.id} (${room.members.size} người)`);
+  console.log(`[room ${key}] +${member.name}#${member.id} (${room.members.size} players)`);
 }
 
 function leaveRoom(ws) {
@@ -216,7 +216,7 @@ function leaveRoom(ws) {
   if (!member || !member.room) return;
   const room = member.room;
   room.members.delete(ws);
-  console.log(`[phòng ${room.key}] -${member.name}#${member.id} (${room.members.size} người)`);
+  console.log(`[room ${room.key}] -${member.name}#${member.id} (${room.members.size} players)`);
 
   if (room.host === ws) {
     room.host = null;
@@ -228,7 +228,7 @@ function leaveRoom(ws) {
     }
     if (room.host) {
       broadcast(room, { t: 'host', h: room.host.meta.id });
-      console.log(`[phòng ${room.key}] chuyển chủ phòng sang #${room.host.meta.id}`);
+      console.log(`[room ${room.key}] host moved to #${room.host.meta.id}`);
     }
   }
 
@@ -262,32 +262,32 @@ wss.on('connection', (ws) => {
     const room = member.room;
 
     switch (m.t) {
-      case 'i': // input của người chơi -> chỉ host xử lý
+      case 'i': // player input -> only the host handles it
         if (room.host && room.host !== ws) {
           m.f = member.id;
           send(room.host, m);
         }
         break;
 
-      case 's': // snapshot từ host -> mọi máy khác
+      case 's': // host snapshot -> every other machine
         if (room.host !== ws) return;
         m.f = m.f | 0;
         broadcast(room, m, ws);
         break;
 
-      case 'e': // sự kiện (bắn, cứu, hạ gục...)
+      case 'e': // events (shots, revives, kills...)
         m.f = member.id;
         broadcast(room, m, ws);
         break;
 
-      case 'p': // presence -> chỉ host cần
+      case 'p': // presence -> only the host needs it
         if (room.host && room.host !== ws) {
           m.f = member.id;
           send(room.host, m);
         }
         break;
 
-      case 'rw': // phần thưởng host gửi cho đúng người hạ gục
+      case 'rw': // rewards the host sends to the player who scored the kill
         if (room.host !== ws) return;
         for (const mm of room.members.values()) {
           if (mm.id === m.to) {
@@ -297,7 +297,7 @@ wss.on('connection', (ws) => {
         }
         break;
 
-      case 'pi': // đo ping
+      case 'pi': // ping measurement
         send(ws, { t: 'po', c: m.c });
         break;
 
@@ -310,7 +310,7 @@ wss.on('connection', (ws) => {
   ws.on('error', () => leaveRoom(ws));
 });
 
-// Dọn kết nối chết (mất mạng, tắt máy) để không kẹt phòng
+// Clean up dead connections (network loss, shutdown) so rooms do not jam
 const sweep = setInterval(() => {
   for (const ws of wss.clients) {
     if (ws.isAlive === false) {
@@ -319,7 +319,7 @@ const sweep = setInterval(() => {
       continue;
     }
     ws.isAlive = false;
-    try { ws.ping(); } catch (e) { /* bỏ qua */ }
+    try { ws.ping(); } catch (e) { /* dropped qua */ }
   }
 }, 20000);
 sweep.unref?.();
@@ -332,23 +332,23 @@ server.listen(PORT, () => {
       if (n.family === 'IPv4' && !n.internal) lan.push(n.address);
     }
   }
-  console.log('Đêm Xác Sống — máy chủ co-op đang chạy');
-  console.log('  Máy này:      http://localhost:' + PORT);
-  lan.forEach((ip) => console.log('  Mạng LAN:     http://' + ip + ':' + PORT));
+  console.log('Đêm Xác Sống — co-op server running');
+  console.log('  This machine:      http://localhost:' + PORT);
+  lan.forEach((ip) => console.log('  LAN:     http://' + ip + ':' + PORT));
   if (SIM_ON) {
-    console.log('  Giả lập mạng: lag ' + SIM.lag + 'ms · jitter ' + SIM.jitter + 'ms · mất ' + (SIM.loss * 100).toFixed(1) +
-      '% · nhân bản ' + (SIM.dup * 100).toFixed(1) + '% · đảo thứ tự ' + (SIM.reorder * 100).toFixed(1) + '%');
-    if (TRACE) console.log('  Ghi vết gói tin: ' + TRACE);
+    console.log('  Network simulation: lag ' + SIM.lag + 'ms · jitter ' + SIM.jitter + 'ms · lost ' + (SIM.loss * 100).toFixed(1) +
+      '% · duplicated ' + (SIM.dup * 100).toFixed(1) + '% · reordered ' + (SIM.reorder * 100).toFixed(1) + '%');
+    if (TRACE) console.log('  Packet trace: ' + TRACE);
   } else {
-    console.log('  Mạng thật (không giả lập). Thêm --lag/--loss để thử mạng xấu, xem docs/qa.md.');
+    console.log('  Real network (no simulation). Add --lag/--loss to test a bad link, see docs/qa.md.');
   }
-  console.log('  Mở 2 tab (hoặc 2 máy) cùng nhập một mã phòng để chơi co-op.');
+  console.log('  Open two tabs (or two machines) and enter the same room code to play co-op.');
 });
 
 process.on('SIGINT', () => {
-  console.log('\nĐang tắt máy chủ...');
+  console.log('\nShutting down...');
   for (const room of rooms.values()) broadcast(room, { t: 'bye' });
-  if (traceOut) { try { traceOut.end(); } catch (e) { /* bỏ qua */ } }
+  if (traceOut) { try { traceOut.end(); } catch (e) { /* dropped qua */ } }
   wss.close();
   server.close(() => process.exit(0));
 });

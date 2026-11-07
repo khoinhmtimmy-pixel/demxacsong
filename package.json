@@ -2,7 +2,7 @@
   "name": "dem-xac-song",
   "version": "1.0.0",
   "private": true,
-  "description": "Đêm Xác Sống - game bắn zombie co-op online",
+  "description": "Đêm Xác Sống (Undead Night) — zombie survival shooter with online co-op",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

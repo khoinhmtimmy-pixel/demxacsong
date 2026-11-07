@@ -1,78 +1,78 @@
-# Đêm Xác Sống — bản co-op online
+# Đêm Xác Sống — online co-op edition
 
-Game bắn zombie sinh tồn một-file, nay có **engine co-op thật** (host-authoritative) chạy qua một máy chủ nhỏ.
+A single-file zombie survival shooter, now with a real **host-authoritative co-op engine** running over a small relay server.
 
-## Chạy game
+## Run the game
 
 ```bash
-npm install      # cài "ws" (chỉ 1 gói)
+npm install      # installs "ws" (one package)
 npm start        # http://localhost:8080
 ```
 
-Mở **2 tab** (hoặc 2 máy trong cùng mạng LAN) → chọn chế độ **Cùng chiến** hoặc **Đấu trường** → nhập **cùng một mã phòng** → Bắt đầu.
-Máy vào phòng đầu tiên làm **chủ phòng** (HOST), máy sau là **CLIENT**.
+Open **two tabs** (or two machines on the same LAN) → pick **Co-op** or **Arena** → enter the **same room code** → Start.
+The first machine in the room becomes **HOST**; the second one is a **CLIENT**.
 
-Trên mạng LAN, máy khác mở `http://<IP-máy-chủ>:8080` (IP in ra khi chạy `npm start`).
+On a LAN, another machine opens `http://<host-ip>:8080` (the IP is printed when you run `npm start`).
 
-Nhấn **F3** trong game để xem bảng thông số mạng: ping, jitter, snapshot/giây, thời gian nội suy, số lần phải kéo vị trí.
+Press **F3** in-game for the network panel: ping, jitter, snapshots/s, interpolation delay, and the number of position corrections.
 
-## Kiến trúc
+## Architecture
 
-| Thành phần | Vai trò |
+| Piece | Role |
 |---|---|
-| `index.html` | Toàn bộ game (giữ nguyên, chỉ thêm vài điểm nối) |
-| `net.js` | Engine co-op: dự đoán phía client, snapshot, nội suy, AOI |
-| `server.js` | Phục vụ file tĩnh + relay gói tin + bầu chủ phòng |
+| `index.html` | The whole game (unchanged apart from a few hook points) |
+| `net.js` | Co-op engine: client prediction, snapshots, interpolation, AOI |
+| `server.js` | Static file server + packet relay + host election |
 
-Mô hình giống các battleground hiện đại (kiểu Chaos Battlegrounds) chứ không phải "gửi vị trí 12 lần/giây":
+The model follows modern battleground netcode rather than "send my position 12 times a second":
 
-1. **Host-authoritative** — chủ phòng mô phỏng thế giới (quái, rương, sát thương) và phát **snapshot 20 Hz**. Client không tự quyết định hạ gục để tránh lệch trạng thái.
-2. **Client-side prediction** — máy client vẫn chạy di chuyển của mình ngay lập tức, không chờ máy chủ, nên cảm giác điều khiển không bị trễ.
-3. **Reconciliation** — khi snapshot của host về, client so vị trí thật với vị trí dự đoán: lệch nhỏ thì kéo êm (14×dt), lệch lớn (>200 px) mới đặt lại. Hết kiểu giật/teleport.
-4. **Snapshot interpolation** — quái và rương được nội suy giữa hai snapshot với đệm ~100–160 ms (tự co giãn theo jitter), nên chuyển động mượt dù chỉ có 20 gói/giây.
-5. **Quantize + AOI** — toạ độ gửi dạng số nguyên, chỉ gửi thực thể trong bán kính 1300 px quanh đồng đội, dữ liệu hiển thị (màu, hình dáng, tên boss) chỉ gửi **một lần** cho mỗi thực thể.
-6. **Không nén gói tin** — `perMessageDeflate` tắt vì nén làm tăng trễ từng gói; gói tin vẫn nhỏ nhờ lượng tử hoá.
-7. **Bầu lại chủ phòng** — host thoát thì máy kế tiếp lên làm chủ, phòng không chết.
+1. **Host-authoritative** — the host simulates the world (zombies, chests, damage) and publishes **20 Hz snapshots**. Clients do not decide kills themselves, which is what prevents state divergence.
+2. **Client-side prediction** — a client still moves immediately on its own input instead of waiting for the server, so controls never feel delayed.
+3. **Reconciliation** — when a host snapshot arrives the client compares the authoritative position with its predicted one: small error is eased away (14×dt), only a large one (>200 px) is snapped. No more jitter or teleporting.
+4. **Snapshot interpolation** — zombies and chests are interpolated between two snapshots with a ~100–160 ms buffer (adaptive to jitter), so motion stays smooth at only 20 packets/s.
+5. **Quantize + AOI** — coordinates travel as integers, only entities within 1300 px of a teammate are sent, and display data (colour, shape, boss name) is sent **once** per entity.
+6. **No packet compression** — `perMessageDeflate` is off because compression adds per-packet latency; quantization already keeps packets small.
+7. **Host migration** — if the host leaves, the next machine takes over and the room survives.
 
-## Đồng bộ trong co-op
+## What is synchronized in co-op
 
-- Quái, rương, vật phẩm, đòn của boss: do host quyết định, client chỉ hiển thị.
-- Đạn của đồng đội: client gửi sự kiện bắn, host kiểm tra va chạm và cộng xu cho **đúng người hạ gục**.
-- Xu, điểm, súng, nâng cấp, nhiệm vụ, rương: vẫn là tiến trình **riêng của từng máy** (lưu localStorage như cũ).
-- Ngã xuống / cứu đồng đội: host giữ trạng thái, tín hiệu cứu đi qua server.
-- Chế độ chơi đơn (không nhập mã phòng) chạy y như bản gốc, không phụ thuộc mạng.
+- Zombies, chests, items, boss attacks: owned by the host, clients only render them.
+- Teammate bullets: the client sends a shot event, the host resolves the hit and credits the **player who actually scored the kill**.
+- Coins, score, guns, upgrades, quests, chests: still **per-machine** progression (saved to localStorage as before).
+- Downed / reviving a teammate: state lives on the host, the revive signal goes through the server.
+- Single player (no room code) behaves exactly like the original build and needs no network.
 
-## Đo hiệu năng & thử mạng xấu
+## Measuring performance & testing bad networks
 
-Bấm **F3** trong trận để xem: ping, jitter, fps, thời gian mô phỏng/vẽ (ms), snapshot/giây, thời gian nội suy, số lần phải kéo vị trí, số quái/đạn.
+Press **F3** in a match for: ping, jitter, fps, simulation/render time (ms), snapshots/s, interpolation delay, position corrections, zombie/bullet counts.
 
-- Mỗi giây một dòng số liệu được ghi lại; bấm **⬇ xuất CSV** để tải về (có p50/p95 ở cuối file).
-- Giả lập mạng xấu (mặc định tắt):
+- One row per second is recorded; press **⬇ export CSV** to download it (p50/p95 in the footer).
+- Bad-network simulation (off by default):
 
 ```bash
-node server.js --lag 60 --jitter 10 --loss 0.01                 # mạng thường
-node server.js --lag 150 --jitter 30 --loss 0.03 --reorder 0.01  # mạng xấu
-node server.js --lag 80 --loss 0.02 --trace docs/trace.csv       # ghi vết từng gói
+node server.js --lag 60 --jitter 10 --loss 0.01                 # normal network
+node server.js --lag 150 --jitter 30 --loss 0.03 --reorder 0.01  # bad network
+node server.js --lag 80 --loss 0.02 --trace docs/trace.csv       # log every packet
 ```
 
-Chỉ **snapshot** bị làm rơi/nhân bản/đảo thứ tự; input, sự kiện bắn, cứu đồng đội và chia thưởng luôn tới đủ (giống TCP thật, nơi mất gói là trễ chứ không phải mất thông điệp).
+Only **snapshots** are dropped/duplicated/reordered; input, shot events, revives and kill rewards always arrive — like real TCP, where packet loss means *delay*, not *lost messages*.
 
-Quy trình đo đầy đủ, 7 kịch bản và ngưỡng đạt: xem `docs/qa.md`. Số đo hiện tại: `docs/baseline.md`.
+The full procedure, seven scenarios and pass thresholds: see `docs/qa.md`. Current measurements: `docs/baseline.md`.
 
-## Kiểm thử
+## Testing
 
 ```bash
-node server.js &                 # hoặc npm start ở cổng 8080
-PORT=8090 node server.js &       # cổng riêng cho test
+node server.js &                 # or npm start on port 8080
+PORT=8090 node server.js &       # dedicated port for tests
 PORT=8090 node test/net-smoke.js
 ```
 
-`npm test` chạy `test/netsim.js` — kiểm chứng bộ giả lập mạng (không cờ thì không thêm trễ, `--lag 60` tạo đúng trễ, `--loss` rơi đúng tỉ lệ, file `--trace` đúng định dạng).
+`npm test` runs `test/netsim.js` — it verifies the impairment simulator (no flags adds no delay, `--lag 60` produces that delay, `--loss` drops the right share, `--trace` writes the right format).
 
-`test/net-smoke.js` kiểm tra: vào phòng, bầu host, chuyển input client→host, phát snapshot host→client, sự kiện bắn, chia thưởng đúng người, đo ping, và bầu lại host khi host thoát.
+`test/net-smoke.js` checks: joining a room, host election, client→host input, host→client snapshots, shot events, kill rewards going to the right player, ping measurement, and host re-election when the host leaves.
 
-## Ghi chú
+## Notes
 
-- Chơi qua Internet cần mở cổng 8080 và dùng IP công khai / VPN (Tailscale, ZeroTier…) hoặc đặt sau reverse proxy có WebSocket.
-- Server không mô phỏng game, chỉ relay — nên độ trễ thêm gần như bằng 0 so với kết nối trực tiếp.
-- Nếu host có ping cao, client vẫn mượt khi di chuyển (nhờ dự đoán), nhưng quái sẽ phản ứng theo nhịp của host.
+- Playing over the Internet requires opening port 8080 and using a public IP / VPN (Tailscale, ZeroTier…) or a reverse proxy with WebSocket support.
+- The server does not simulate the game, it only relays — so added latency is essentially zero compared with a direct connection.
+- If the host has a high ping, clients still move smoothly (thanks to prediction), but zombies react at the host's pace.

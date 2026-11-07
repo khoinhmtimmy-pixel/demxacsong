@@ -1,75 +1,75 @@
-# QA — "Chứng minh là không lag"
+# QA — "Prove it does not lag"
 
-Mục tiêu: mọi tuyên bố "đã hết lag" phải kèm **số đo**, không phải cảm giác.
+Goal: every claim that "the lag is gone" must come with **measurements**, not a feeling.
 
-## 1. Ba mức chất lượng mạng
+## 1. Three network tiers
 
-| Mức | Điều kiện | Đạt khi |
+| Tier | Conditions | Passes when |
 |---|---|---|
-| LAN | RTT < 5 ms, 0 % mất gói | không giật; `corr` < 5 lần/phút; quái trễ ≤ 1 snapshot |
-| Thường | 60 ms, 1 % mất gói | di chuyển mượt; không teleport; `corr` < 20/phút |
-| Xấu | 150 ms, 3 % mất gói, jitter 30 ms | vẫn chơi được; không lệch trạng thái; `corr` < 60/phút |
+| LAN | RTT < 5 ms, 0 % loss | no stutter; `corr` < 5/min; zombies behind by ≤ 1 snapshot |
+| Normal | 60 ms, 1 % loss | movement smooth; no teleporting; `corr` < 20/min |
+| Bad | 150 ms, 3 % loss, 30 ms jitter | still playable; no state divergence; `corr` < 60/min |
 
-## 2. Chạy từng mức
+## 2. Running each tier
 
 ```bash
-# LAN — không giả lập gì
+# LAN — no simulation
 npm start
 
-# Thường — 60ms, 1% mất snapshot, jitter 10ms
-node server.js --lag 60 --jitter 10 --loss 0.01 --trace docs/trace-thuong.csv
+# Normal — 60ms, 1% snapshot loss, 10ms jitter
+node server.js --lag 60 --jitter 10 --loss 0.01 --trace docs/trace-normal.csv
 
-# Xấu — 150ms, 3% mất snapshot, jitter 30ms, đảo thứ tự 1%
-node server.js --lag 150 --jitter 30 --loss 0.03 --reorder 0.01 --trace docs/trace-xau.csv
+# Bad — 150ms, 3% snapshot loss, 30ms jitter, 1% reorder
+node server.js --lag 150 --jitter 30 --loss 0.03 --reorder 0.01 --trace docs/trace-bad.csv
 ```
 
-Cờ có sẵn: `--lag` (ms), `--jitter` (± ms), `--loss` (0–1), `--dup` (0–1), `--reorder` (0–1), `--trace` (file CSV).
+Available flags: `--lag` (ms), `--jitter` (± ms), `--loss` (0–1), `--dup` (0–1), `--reorder` (0–1), `--trace` (CSV file).
 
-**Quy tắc quan trọng:** chỉ **snapshot** bị bỏ/nhân bản/đảo thứ tự. Input, sự kiện bắn, cứu đồng đội và chia thưởng luôn tới đủ — vì trên TCP thật, mất gói là *trễ* chứ không phải *mất thông điệp*. Bỏ chúng đi sẽ là test một lỗi không tồn tại.
+**Important rule:** only **snapshots** are dropped/duplicated/reordered. Input, shot events, revives and kill rewards always arrive — on real TCP packet loss means *delay*, not *a lost message*. Dropping them would test a bug that does not exist.
 
-Server in ra mỗi 10 giây: số gói, số bỏ, trễ trung bình, KB — đủ để biết bộ giả lập có đang chạy đúng.
+The server prints every 10 seconds: packets, drops, mean delay, KB — enough to confirm the simulator is really running.
 
-## 3. Lấy số trong game
+## 3. Collecting numbers in-game
 
-1. Vào trận co-op, bấm **F3** → hiện bảng: ping, jitter, fps, sim ms, draw ms, snap/s, interp, `corr`, số quái/đạn.
-2. Mỗi giây một dòng được ghi lại (tối đa 2 giờ).
-3. Bấm **⬇ xuất CSV** → tải `netmetrics-<thời gian>.csv`: mỗi giây một dòng, có fps/sim/draw/KB/corr/heap, cuối file là p50/p95 và số phút đã đo.
-4. Dán số p95 vào bảng ở mục 5 và vào `docs/baseline.md`.
+1. Join a co-op match, press **F3** → panel shows ping, jitter, fps, sim ms, draw ms, snap/s, interp, `corr`, zombie/bullet counts.
+2. One row per second is recorded (up to 2 hours).
+3. Press **⬇ export CSV** → downloads `netmetrics-<time>.csv`: one row per second with fps/sim/draw/KB/corr/heap, and p50/p95 plus minutes measured in the footer.
+4. Paste the p95 numbers into the table in section 5 and into `docs/baseline.md`.
 
-## 4. Bảy kịch bản (3 phút mỗi cái, cùng seed)
+## 4. Seven scenarios (3 minutes each, fixed seed)
 
-| ID | Kịch bản | Câu hỏi | Kết quả |
+| ID | Scenario | Question | Result |
 |---|---|---|---|
-| S1 | 150 quái, bắn liên tục | p95 frame time, KB/s | chưa đo |
-| S2 | Boss + đòn diện rộng | client có thấy đòn để né | chưa đo |
-| S3 | Một người ngã, người kia cứu | trạng thái hai máy có khớp | chưa đo |
-| S4 | Host thoát giữa trận | phòng sống tiếp, đợt liền mạch | chưa đo |
-| S5 | Vào phòng giữa đợt | có nhảy đợt / spawn sai chỗ | chưa đo |
-| S6 | 10.000 viên đạn | rò rỉ bộ nhớ, `S.b`/`S.sp` phình | chưa đo |
-| S7 | Chơi liên tục 30 phút | heap, tile cache, entity sau 30 phút | chưa đo |
+| S1 | 150 zombies, constant fire | p95 frame time, KB/s | not measured |
+| S2 | Boss + area attacks | can the client see the attack in time to dodge | not measured |
+| S3 | One player down, the other revives | do both machines agree | not measured |
+| S4 | Host leaves mid-match | does the room survive, is the wave continuous | not measured |
+| S5 | Joining mid-wave | wave jump / wrong spawn | not measured |
+| S6 | 10,000 bullets | memory leak, do `S.b`/`S.sp` grow | not measured |
+| S7 | 30 minutes continuous | heap, tile cache, entity count after 30 min | not measured |
 
-Cột "Kết quả" chỉ được điền sau khi có CSV. Không điền bằng cảm nhận.
+The "Result" column may only be filled in after a CSV exists. Never from a feeling.
 
-## 5. Triệu chứng → nguyên nhân → sửa
+## 5. Symptom → cause → fix
 
-| Triệu chứng | Nguyên nhân thường gặp | Sửa ở đâu |
+| Symptom | Usual cause | Where to fix |
 |---|---|---|
-| Teleport khi chạm quái | hoà giải quá tay | ngưỡng 200 px + kéo 14×dt (`net.js`) |
-| Quái trượt nhẹ | interp ngắn hơn nhịp snapshot | đệm 1,6× khoảng cách gói (`interp`) |
-| Bắn trúng mà không mất máu | host kiểm tra ở vị trí mới | lag compensation `RTT/2` (chưa làm) |
-| Càng chơi càng chậm | máu vẽ vào tile cache | trần vết máu/tile, dọn tile xa |
-| Vào phòng là khựng | client chạy frame rỗng trước snapshot đầu | chờ snapshot đầu rồi mới `run=true` |
+| Teleporting when touching a zombie | over-aggressive reconciliation | 200 px threshold + 14×dt easing (`net.js`) |
+| Zombies slide slightly | interpolation shorter than snapshot spacing | 1.6× packet interval buffer (`interp`) |
+| Hit registered but no damage | host checks at the new position | lag compensation `RTT/2` (not done yet) |
+| Gets slower the longer you play | blood baked into the tile cache | cap blood per tile, evict distant tiles |
+| Stutter right after joining | client runs an empty frame before the first snapshot | wait for the first snapshot before `run=true` |
 
-## 6. Checklist chơi thử 2 máy (10 phút)
+## 6. Two-machine playtest checklist (10 minutes)
 
-1. `npm start` trên máy mạnh; mở `http://<IP-LAN>:8080` trên máy thứ hai (điện thoại cũng được).
-2. Cùng mã phòng, chọn **Online · Cùng chiến**, chơi 3 đợt.
-3. Bấm F3 cả hai máy, chụp màn hình, xuất CSV cả hai.
-4. Lặp lại với `--lag 60` rồi `--lag 150 --loss 0.03`.
-5. Ghi 3 dòng cảm nhận: di chuyển / bắn / quái.
+1. `npm start` on the faster machine; open `http://<LAN-IP>:8080` on the second machine (a phone works).
+2. Same room code, pick **Online · Co-op**, play 3 waves.
+3. Press F3 on both machines, take screenshots, export both CSVs.
+4. Repeat with `--lag 60`, then `--lag 150 --loss 0.03`.
+5. Write three lines of feedback: movement / shooting / zombies.
 
-## 7. Lưu ý khi đo
+## 7. Measurement caveats
 
-- **Tab ẩn làm `requestAnimationFrame` dừng** → fps và mọi số liệu trong game sẽ bằng 0. Phải mở tab thật (cửa sổ trình duyệt hiển thị), không đo qua tab nền.
-- Đo trên máy đang chạy server sẽ tính cả công việc của server; muốn số sạch thì chạy server ở máy khác.
-- Bộ giả lập mạng được kiểm chứng tự động: `npm test` (xem `test/netsim.js`).
+- **A hidden tab stops `requestAnimationFrame`** → fps and every in-game number read zero. Measure in a real, visible browser window, never a background tab.
+- Measuring on the machine that also runs the server includes the server's work; run the server elsewhere for clean numbers.
+- The impairment simulator is verified automatically: `npm test` (see `test/netsim.js`).

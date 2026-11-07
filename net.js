@@ -1,14 +1,14 @@
-/* Đêm Xác Sống — engine co-op.
- * Kiến trúc kiểu "battleground" hiện đại:
- *   - Host-authoritative: một máy làm chủ, mô phỏng thế giới, phát snapshot 20 Hz.
- *   - Client-side prediction + reconciliation: máy khác chạy dự đoán di chuyển của mình,
- *     chỉ kéo lệch khi lệch thật, nên không bị giật kiểu "teleport".
- *   - Snapshot interpolation: quái/vật phẩm được nội suy giữa 2 snapshot (đệm ~100 ms)
- *     thay vì nhảy theo gói tin.
- *   - Quantize + AOI: toạ độ làm tròn, chỉ gửi thực thể trong bán kính 1300 px quanh
- *     đồng đội, dữ liệu hiển thị (màu, hình) chỉ gửi 1 lần cho mỗi thực thể.
- *   - Delta-lite: gói tin nhỏ, không nén (nén làm tăng trễ).
- * Bật/tắt bảng thông số mạng bằng F3.
+/* Đêm Xác Sống (Undead Night) — co-op engine.
+ * Modern "battleground"-style architecture:
+ *   - Host-authoritative: one machine is the host, simulates the world, publishes 20 Hz snapshots.
+ *   - Client-side prediction + reconciliation: other machines predict their own movement,
+ *     and only ease real errors away, so there is no teleport-style stutter.
+ *   - Snapshot interpolation: zombies/items are interpolated between two snapshots (~100 ms buffer)
+ *     instead of snapping with every packet.
+ *   - Quantize + AOI: positions are rounded, only entities within 1300 px of
+ *     a teammate are sent, and display data (colour, shape) goes out once per entity.
+ *   - Delta-lite: small packets, no compression (compression adds latency).
+ * Toggle the network panel with F3.
  */
 (function () {
   'use strict';
@@ -22,21 +22,21 @@
   function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
-  var TICK_MS = 50;   // 20 snapshot/giây (host)
-  var IN_MS = 25;     // 40 input/giây (client)
-  var PRES_MS = 100;  // 10 presence/giây
-  var AOI = 1300;     // bán kính quan tâm (px)
+  var TICK_MS = 50;   // 20 snapshot/s (host)
+  var IN_MS = 25;     // 40 input/s (client)
+  var PRES_MS = 100;  // 10 presence/s
+  var AOI = 1300;     // area-of-interest radius (px)
   var WW = 98304000;
   var WH = 65536000;
 
   var ws = null, open = false, myId = 0, roomKey = '', isHost = false;
   var roster = [], room = null, handlers = {}, welcomeRes = null, welcomeTimer = 0;
   var netPlayers = [];
-  var shadows = {};          // host: người chơi từ xa
-  var eid = 0;               // id thực thể do host cấp
+  var shadows = {};          // host: remote players
+  var eid = 0;               // entity id assigned by the host
   var E = { z: {}, c: {}, i: {} };
   var lastArrive = 0, eIn = 50, interp = 100;
-  var zSeen = 0, waveSeen = -1; // client: đã thấy quái của đợt này chưa
+  var zSeen = 0, waveSeen = -1; // client: has this wave's zombies been seen yet
   var authSelf = null, authAt = 0, selfDn = 0;
   var stat = {
     frame: 0, inSeq: 0, lastIn: 0, lastPres: 0, lastTick: 0, lastPing: 0,
@@ -44,7 +44,7 @@
     lastSec: now(), secSnaps: 0
   };
 
-  /* ------------------------------------------------------------------ đồ hoạ phụ */
+  /* ------------------------------------------------------------------ extra drawing */
 
   var graph = null;
   function graphEl() {
@@ -57,7 +57,7 @@
     var body = document.createElement('div');
     body.id = 'ngtext';
     var btn = document.createElement('button');
-    btn.textContent = '⬇ xuất CSV';
+    btn.textContent = '⬇ Export CSV';
     btn.style.cssText = 'margin-top:6px;font:800 10px ui-monospace,monospace;background:#9be15d;color:#04120a;' +
       'border:0;border-radius:5px;padding:3px 8px;cursor:pointer';
     btn.addEventListener('click', function (e) { e.preventDefault(); NET.exportCSV(); });
@@ -66,11 +66,11 @@
     document.body.appendChild(graph);
     return graph;
   }
-  // Trình duyệt dừng requestAnimationFrame khi tab bị ẩn. Với host, việc đó làm cả
-  // phòng đứng yên — phải nói thẳng cho người chơi biết thay vì để họ đoán.
+  // The browser stops requestAnimationFrame when the tab is hidden. For the host that
+  // freezes the room — say so plainly instead of letting players guess.
   document.addEventListener('visibilitychange', function () {
     if (document.hidden && isHost && api && api.msg) {
-      api.msg('Chủ phòng: giữ tab hiển thị, nếu không đồng đội sẽ đứng yên.');
+      api.msg('Host: keep this tab visible, otherwise teammates will freeze.');
     }
   });
 
@@ -82,7 +82,7 @@
     }
   });
 
-  /* ------------------------------------------------------------------ số liệu đo */
+  /* ------------------------------------------------------------------ metrics */
 
   var perf = {
     rows: [], frames: 0, fps: 0, fpsT0: now(), lastSample: now(), lastPaint: 0,
@@ -120,7 +120,7 @@
       sp: st ? st.sp.length : -1,
       heap: heapMB()
     });
-    if (perf.rows.length > 7200) perf.rows.shift(); // 2 giờ ở 1 mẫu/giây
+    if (perf.rows.length > 7200) perf.rows.shift(); // 2 hours at one sample per second
   }
 
   function paint() {
@@ -133,7 +133,7 @@
       (isHost ? 'HOST' : 'CLIENT') + '  ping ' + s.ping + 'ms  jit ' + s.jitter.toFixed(1) + '\n' +
       'fps ' + perf.fps.toFixed(0) + '  sim ' + perf.simMs.toFixed(1) + 'ms  draw ' + perf.drawMs.toFixed(1) + 'ms\n' +
       'snap ' + stat.sps + '/s  interp ' + interp.toFixed(0) + 'ms  corr ' + stat.corr + '\n' +
-      'quái ' + (st ? st.z.length : 0) + ' · đạn ' + (st ? st.b.length : 0) + ' · bạn ' + netPlayers.length + '\n' +
+      'zombie ' + (st ? st.z.length : 0) + ' · bullets ' + (st ? st.b.length : 0) + ' · players ' + netPlayers.length + '\n' +
       'p95 draw ' + s.draw[1].toFixed(1) + 'ms · ' + s.kb[1].toFixed(1) + ' KB/s';
   }
 
@@ -192,7 +192,7 @@
     var tail = '\n# fps_p50,' + s.fps[0].toFixed(1) + ',fps_p95,' + s.fps[1].toFixed(1) +
       '\n# sim_p95_ms,' + s.sim[1].toFixed(2) + ',draw_p95_ms,' + s.draw[1].toFixed(2) +
       '\n# kb_p95,' + s.kb[1].toFixed(1) + ',corr,' + s.corr + ',ping_ms,' + s.ping + ',jitter,' + s.jitter.toFixed(1) +
-      '\n# phút_đo,' + (perf.rows.length / 60).toFixed(1) + '\n';
+      '\n# minutes_measured,' + (perf.rows.length / 60).toFixed(1) + '\n';
     return head + body + tail;
   };
 
@@ -214,14 +214,14 @@
     if (!open || !ws || ws.readyState !== 1) return;
     var raw = JSON.stringify(o);
     stat.dout += raw.length;
-    try { ws.send(raw); } catch (e) { /* mất kết nối */ }
+    try { ws.send(raw); } catch (e) { /* lost connection */ }
   }
 
   function makeRoom() {
     return {
       on: function (ev, fn) { (handlers[ev] || (handlers[ev] = [])).push(fn); },
       emit: function (ev, data) {
-        // host tự áp dụng lệnh cứu của chính nó (server không gửi lại cho người gửi)
+        // the host applies its own revive locally (the server never echoes to the sender)
         if (isHost && ev === 'rev' && data && data.to) {
           var sh = shadows[data.to];
           if (sh && sh.dn) { sh.dn = 0; sh.dnT = 0; sh.hp = Math.max(1, sh.max * 0.5); }
@@ -244,7 +244,7 @@
 
   NET.join = function (key, opts) {
     opts = opts || {};
-    if (!location.host) return Promise.reject(new Error('Cần chạy qua máy chủ (node server.js)'));
+    if (!location.host) return Promise.reject(new Error('Needs the relay server (node server.js)'));
     return new Promise(function (resolve, reject) {
       var proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
       try {
@@ -265,13 +265,13 @@
         if (welcomeRes) {
           welcomeRes = null;
           close();
-          reject(new Error('Hết thời gian kết nối'));
+          reject(new Error('Connection timed out'));
         }
       }, 8000);
 
       ws.onopen = function () {
         open = true;
-        send({ t: 'j', r: key, n: (opts.name || 'khách').slice(0, 16) });
+        send({ t: 'j', r: key, n: (opts.name || 'guest').slice(0, 16) });
       };
       ws.onmessage = function (ev) {
         stat.din += (ev.data && ev.data.length) || 0;
@@ -284,10 +284,10 @@
         open = false;
         isHost = false;
         authSelf = null;
-        if (welcomeRes) { welcomeRes = null; reject(new Error('Không kết nối được máy chủ')); return; }
+        if (welcomeRes) { welcomeRes = null; reject(new Error('Cannot reach the server')); return; }
         if (wasOpen && api && api.onDisconnect) api.onDisconnect();
       };
-      ws.onerror = function () { /* onclose xử lý */ };
+      ws.onerror = function () { /* onclose handles */ };
     });
   };
 
@@ -296,7 +296,7 @@
     isHost = false;
     welcomeRes = null;
     clearTimeout(welcomeTimer);
-    if (ws) { try { ws.close(); } catch (e) { /* bỏ qua */ } }
+    if (ws) { try { ws.close(); } catch (e) { /* dropped qua */ } }
     ws = null;
     shadows = {};
     E = { z: {}, c: {}, i: {} };
@@ -344,7 +344,7 @@
           if (st) {
             st.coin += m.c | 0;
             st.score += m.s | 0;
-            st.tx.push({ x: st.p.x, y: st.p.y - 30, t: 1.1, s: '+' + (m.c | 0) + ' xu', c: '#ffc83d' });
+            st.tx.push({ x: st.p.x, y: st.p.y - 30, t: 1.1, s: '+' + (m.c | 0) + ' coins', c: '#ffc83d' });
             if (api && api.hud) api.hud();
           }
         }
@@ -357,7 +357,7 @@
         break;
       }
       case 'bye':
-        msg('Chủ phòng đã đóng máy chủ.');
+        msg('The host closed the server.');
         break;
       default:
         break;
@@ -368,7 +368,7 @@
     var list = handlers[ev];
     if (!list) return;
     for (var i = 0; i < list.length; i++) {
-      try { list[i](e); } catch (err) { /* một handler lỗi không làm sập mạng */ }
+      try { list[i](e); } catch (err) { /* one faulty handler cannot take the network down */ }
     }
   }
 
@@ -587,7 +587,7 @@
           st.p.hp = row[4];
           if (row[6] === 1 && st.mode === 16 && !(st.dn > 0) && !(st.dead > 0)) {
             st.dn = 30; st.p.hp = 1; st.p.hit = 99;
-            msg('Bạn ngã xuống! Chờ đồng đội cứu (30 giây)');
+            msg('You are down! Wait for a teammate to revive you (30s)');
             send({ t: 'e', e: 'dn', d: {} });
           }
           if (row[6] === 0 && st.dn > 0) { st.dn = 0; }
@@ -603,7 +603,7 @@
     }
     if (m.z && m.z.length) zSeen = 1;
 
-    // quái
+    // zombie
     var seen = {}, list = m.z || [];
     for (var k = 0; k < list.length; k++) {
       var a = list[k], id = a[0], e = E.z[id];
@@ -618,7 +618,7 @@
     }
     for (var zid in E.z) if (!seen[zid]) delete E.z[zid];
 
-    // rương
+    // chest
     seen = {};
     list = m.c || [];
     for (var q = 0; q < list.length; q++) {
@@ -626,7 +626,7 @@
       if (!ce) ce = E.c[cid] = { _nid: cid, x: 0, y: 0, t: 0, o: 0, opn: 0, op: 0, life: 1e9, perm: 0, beam: 0, mim: 0, bomb: 0 };
       ce.x = c[1]; ce.y = c[2]; ce.t = c[3] | 0;
       var so = (c[4] | 0) / 100;
-      if (so > ce.o) ce.o = so; // giữ tiến độ mở của chính mình, không bị snapshot ghi đè
+      if (so > ce.o) ce.o = so; // keep my own open progress, never overwritten by snapshots
       var fl = c[5] | 0;
       ce.beam = fl & 1; ce.mim = fl & 2; ce.bomb = fl & 4; ce.perm = fl & 8;
       if (fl & 16) ce.opn = 1;
@@ -634,7 +634,7 @@
     }
     for (var ck in E.c) if (!seen[ck]) delete E.c[ck];
 
-    // vật phẩm
+    // items
     seen = {};
     list = m.i || [];
     for (var w = 0; w < list.length; w++) {
@@ -673,10 +673,10 @@
     arr = [];
     for (id in E.c) {
       e = E.c[id];
-      if (e.opn && e.op <= 0) continue; // đã mở xong, chờ host xoá
+      if (e.opn && e.op <= 0) continue; // already opened, waiting for the host to clear it
       arr.push(e);
     }
-    // giữ lại rương "perm" (rương gắn với bản đồ của riêng máy này)
+    // keep local "perm" chests (chests bound to this machine's own map)
     var keep = st.ch || [];
     for (var k2 = 0; k2 < keep.length; k2++) {
       if (keep[k2] && keep[k2].perm && !keep[k2]._nid) arr.push(keep[k2]);
@@ -736,7 +736,7 @@
     return out;
   }
 
-  /* ------------------------------------------------------------------ vòng lặp */
+  /* ------------------------------------------------------------------ main loop */
 
   NET.pre = function (dt) {
     if (!open) return;

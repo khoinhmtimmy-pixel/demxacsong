@@ -1,6 +1,6 @@
 'use strict';
-/* Kiểm thử nhanh phần relay của engine co-op (không cần trình duyệt).
- * Chạy: node test/net-smoke.js   (cần server đang chạy ở PORT, mặc định 8090)
+/* Quick relay test for the co-op engine (no browser needed).
+ * Run: node test/net-smoke.js   (needs a server on PORT, default 8090)
  */
 const WebSocket = require('ws');
 
@@ -34,60 +34,60 @@ async function main() {
   a.send2({ t: 'j', r: ROOM, n: 'host' });
   await wait(120);
   const wa = a.take('welcome');
-  ok('host nhận welcome', !!wa, JSON.stringify(a.inbox));
-  ok('host là chủ phòng', wa && wa.h === wa.i);
+  ok('host receives welcome', !!wa, JSON.stringify(a.inbox));
+  ok('host is the room host', wa && wa.h === wa.i);
 
   const b = client();
   await b.ready;
   b.send2({ t: 'j', r: ROOM, n: 'client' });
   await wait(120);
   const wb = b.take('welcome');
-  ok('client nhận welcome', !!wb);
-  ok('client thấy host id', wb && wa && wb.h === wa.i);
-  ok('host được báo có người vào', !!a.take('join'));
+  ok('client receives welcome', !!wb);
+  ok('client sees host id', wb && wa && wb.h === wa.i);
+  ok('host is told someone joined', !!a.take('join'));
 
   // input: client -> host
   b.send2({ t: 'i', x: 100, y: 0, a: 157, v: 190 });
   await wait(80);
   const inp = a.take('i');
-  ok('input chuyển tới host kèm id người gửi', inp && inp.f === wb.i && inp.x === 100, JSON.stringify(inp));
+  ok('input reaches host with the sender id', inp && inp.f === wb.i && inp.x === 100, JSON.stringify(inp));
 
   // snapshot: host -> client
   a.send2({ t: 's', f: 7, p: [[wa.i, 10, 20, 0, 80, 80, 0, 0, 0]], z: [], c: [], i: [] });
   await wait(80);
   const snap = b.take('s');
-  ok('snapshot tới client', snap && snap.f === 7);
+  ok('snapshot reaches client', snap && snap.f === 7);
 
-  // sự kiện bắn: client -> host
+  // shot event: client -> host
   b.send2({ t: 'e', e: 'shot', d: { x: 5, y: 6, d: 10, l: 1, v: [[100, 0]] } });
   await wait(80);
   const shot = a.take('e');
-  ok('sự kiện bắn tới host', shot && shot.e === 'shot' && shot.f === wb.i);
+  ok('shot event reaches host', shot && shot.e === 'shot' && shot.f === wb.i);
 
-  // thưởng: host -> đúng người
+  // reward: host -> the right player
   a.send2({ t: 'rw', to: wb.i, c: 120, s: 50 });
   await wait(80);
   const rw = b.take('rw');
-  ok('phần thưởng về đúng người', rw && rw.c === 120);
+  ok('reward goes to the right player', rw && rw.c === 120);
 
   // ping
   b.send2({ t: 'pi', c: 123 });
   await wait(80);
-  ok('đo ping có phản hồi', !!b.take('po'));
+  ok('ping measured, reply received', !!b.take('po'));
 
-  // host rời phòng -> client lên làm chủ
+  // host leaves the room -> the client takes over
   a.close();
   await wait(200);
   const promoted = b.take('host');
-  ok('bầu lại chủ phòng khi host thoát', promoted && promoted.h === wb.i, JSON.stringify(b.inbox));
+  ok('host re-election when the host leaves', promoted && promoted.h === wb.i, JSON.stringify(b.inbox));
 
   b.close();
   await wait(80);
-  console.log(failed ? '\n' + failed + ' kiểm tra THẤT BẠI' : '\nTất cả kiểm tra mạng đều đạt.');
+  console.log(failed ? '\n' + failed + ' checks FAILED' : '\nAll network checks passed.');
   process.exit(failed ? 1 : 0);
 }
 
 main().catch((e) => {
-  console.error('Lỗi kiểm thử:', e.message);
+  console.error('Test error:', e.message);
   process.exit(1);
 });
