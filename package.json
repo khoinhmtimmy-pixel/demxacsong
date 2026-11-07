@@ -1,0 +1,15 @@
+{
+  "name": "dem-xac-song",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Đêm Xác Sống - game bắn zombie co-op online",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/netsim.js",
+    "test:relay": "node test/net-smoke.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
