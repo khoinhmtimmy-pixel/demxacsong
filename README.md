@@ -16,6 +16,8 @@ On a LAN, another machine opens `http://<host-ip>:8080` (the IP is printed when 
 
 Press **F3** in-game for the network panel: ping, jitter, snapshots/s, interpolation delay, and the number of position corrections.
 
+The menu has a **Tiếng Việt / English** button that switches the whole interface between the two languages. The choice is stored per device (`localStorage` key `zlang`) and applies immediately, including mid-run.
+
 ## Architecture
 
 | Piece | Role |
@@ -23,6 +25,7 @@ Press **F3** in-game for the network panel: ping, jitter, snapshots/s, interpola
 | `index.html` | The whole game (unchanged apart from a few hook points) |
 | `net.js` | Co-op engine: client prediction, snapshots, interpolation, AOI |
 | `server.js` | Static file server + packet relay + host election |
+| `lang.js` | English→Vietnamese table + runtime that swaps DOM text and canvas labels |
 
 The model follows modern battleground netcode rather than "send my position 12 times a second":
 
