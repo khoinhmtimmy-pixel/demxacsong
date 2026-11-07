@@ -372,7 +372,7 @@ x.fillStyle=z.t==3?"#ffe45c":"rgba(110,10,10,.7)";x.beginPath();x.arc(r*.3,r*.1,
 x.fillStyle="rgba(30,0,0,.28)";x.beginPath();x.ellipse(0,0,r*1.4,r*1.1,0,0,TAU);x.fill();x.restore()});
 }
 function hud(){
-$("sc").textContent=S.score;$("wl").textContent=(S.mode==3||S.mode==5)?"Time":"Wave";$("wv").textContent=(S.mode==3||S.mode==5)?Math.ceil(S.tl)+"s":S.wave;$("co").textContent=S.coin;$("wn").textContent=gun().n;$("wn").style.color=gun().col;if(S.inv){$("bz").textContent="Bom Z·"+(S.inv.bomb|0);$("bx").textContent="Shield X·"+(S.inv.shield|0);$("bc").textContent="HP C·"+(S.inv.heal|0);$("bv").textContent="Speed V·"+(S.inv.haste|0)}
+$("sc").textContent=S.score;$("wl").textContent=(S.mode==3||S.mode==5)?"Time":"Wave";$("wv").textContent=(S.mode==3||S.mode==5)?Math.ceil(S.tl)+"s":S.wave;$("co").textContent=S.coin;$("wn").textContent=gun().n;$("wn").style.color=gun().col;if(S.inv){$("bz").textContent="Bomb Z·"+(S.inv.bomb|0);$("bx").textContent="Shield X·"+(S.inv.shield|0);$("bc").textContent="HP C·"+(S.inv.heal|0);$("bv").textContent="Speed V·"+(S.inv.haste|0)}
 if(S.p.rl<=0)$("am").textContent=S.p.ammo+"/"+mag();
 $("hp").style.width=Math.max(0,S.p.hp/S.p.max*100)+"%";$("ab").style.width=Math.max(0,Math.min(100,S.p.ammo/mag()*100))+"%";
 }
