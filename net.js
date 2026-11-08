@@ -523,7 +523,7 @@
       if (!z._vs) {
         z._vs = 1;
         zn[z._nid] = [z.t | 0, Math.round(z.r), z.tier | 0, z.sk, z.cl, z.eye, z.hr,
-          z.hs ? 1 : 0, Math.round(z.sd || 0), z.ac | 0, z.bn || ''];
+          z.hs ? 1 : 0, Math.round(z.sd || 0), z.ac | 0, z.bn || '', z.mut | 0];
       }
     }
     for (i = 0; i < st.ch.length; i++) {
@@ -556,7 +556,7 @@
       o.t = vis[0] | 0; o.r = vis[1] || 13; o.tier = vis[2] | 0;
       o.sk = vis[3] || o.sk; o.cl = vis[4] || o.cl; o.eye = vis[5] || o.eye;
       o.hr = vis[6] || o.hr; o.hs = vis[7]; o.sd = vis[8] || 0; o.ac = vis[9] | 0;
-      o.bn = vis[10] || '';
+      o.bn = vis[10] || ''; o.mut = vis[11] | 0;
     }
     return o;
   }
