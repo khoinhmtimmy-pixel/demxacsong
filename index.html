@@ -57,6 +57,10 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #lbt button{padding:5px 10px;font-size:clamp(10px,1.5vw,13px);background:var(--panel);color:var(--ink)}#lbt button.on{background:var(--acid);color:#0b1411}
 #lbl{width:min(100%,440px);flex:1;min-height:0;overflow-y:auto}
 .lr{display:flex;gap:10px;padding:6px 10px;background:var(--panel);border-radius:6px;margin:3px 0;font-size:clamp(11px,1.7vw,14px);text-align:left}.lr b{width:22px;color:var(--gold)}.lr span{flex:1}.lr i{font-style:normal;color:var(--acid);font-weight:800}
+#pz{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#040a08c4;border-radius:6px;pointer-events:none;text-align:center}
+#pz.off{display:none}
+#pz b{font-size:clamp(22px,5vw,44px);color:var(--acid);text-shadow:0 0 24px #9be15d55}
+#pz span{color:var(--dim);font-size:clamp(11px,2vw,15px);font-weight:500}
 #msg{position:absolute;left:0;right:0;top:34%;text-align:center;font-weight:800;font-size:clamp(20px,5vw,44px);color:var(--gold);pointer-events:none;opacity:0;transition:opacity .4s;text-shadow:0 2px 12px #000}
 </style>
 <script src="lang.js"></script>
@@ -71,11 +75,11 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 <span style="text-align:right">Coins <b class="c" id="co">0</b><br>Best <b id="hi">0</b></span>
 </div>
 <div id="btns"><button id="bs">Shop (B)</button><button id="bw">Switch gun (Q/E)</button><button id="bp">Pet skill (F)</button></div><div id="btns2"><button id="bz">Bomb Z</button><button id="bx">Shield X</button><button id="bc">HP C</button><button id="bv">Speed V</button></div>
-<div id="ev"></div><div id="msg"></div>
+<div id="ev"></div><div id="msg"></div><div id="pz" class="off"><b>Paused</b><span>Press P or click to resume</span></div>
 <div id="ov" class="ov">
 <h1 id="t">Đêm Xác Sống</h1>
 <p id="d">You are stranded in a vast abandoned town at midnight. Kill zombies to earn coins, then buy guns (500 of them) and upgrades in the shop. Find chests on the map and stand near them to open, or buy chests in the shop. Coins, guns and upgrades are saved between runs.</p>
-<p>Move: W A S D · Aim and shoot: mouse · Reload: R · Sprint: Shift<br>Switch gun: Q/E, mouse wheel or keys 1–5 (pick by class) · Shop: B (any time) · Pet skill: F · Items: Z X C V · Quick chat online: T<br>Phone: touch the left half to move, the right half to aim and shoot.</p>
+<p>Move: W A S D · Aim and shoot: mouse · Reload: R · Sprint: Shift · Pause: P<br>Switch gun: Q/E, mouse wheel or keys 1–5 (pick by class) · Shop: B (any time) · Pet skill: F · Items: Z X C V · Quick chat online: T<br>Phone: touch the left half to move, the right half to aim and shoot.</p>
 <div id="modes"></div>
 <div id="diff"></div>
 <div id="acr"><input id="nick" maxlength="16" placeholder="Nickname"><input id="rc" maxlength="16" placeholder="Online room code"><span id="ac"></span></div>
@@ -691,11 +695,13 @@ g.fillStyle="#9be15d";g.fillRect(mx+58,my+38,4,4);g.restore();
 g.strokeStyle="rgba(255,255,255,.3)";g.lineWidth=1;g.strokeRect(mx,my,120,80);drawBoard();zoneArrow();
 g.strokeStyle="#9be15d";g.lineWidth=1.6;g.beginPath();g.arc(mouse.x,mouse.y,9,0,TAU);g.moveTo(mouse.x-15,mouse.y);g.lineTo(mouse.x-5,mouse.y);g.moveTo(mouse.x+5,mouse.y);g.lineTo(mouse.x+15,mouse.y);g.moveTo(mouse.x,mouse.y-15);g.lineTo(mouse.x,mouse.y-5);g.moveTo(mouse.x,mouse.y+5);g.lineTo(mouse.x,mouse.y+15);g.stroke();
 }
-var looping=false;
+var looping=false,paused=false;
+function setPause(v){if(!run||paused==v)return;if(v&&S&&S.room)return;paused=v;keys={};mouse.down=false;touch={};$("pz").classList.toggle("off",!v);if(!v)last=performance.now()}
 function go(){last=performance.now();if(!looping){looping=true;requestAnimationFrame(loop)}}
 function loop(t){
 if(!run){looping=false;return}
 var dt=Math.min(.05,(t-last)/1000);last=t;
+if(paused){requestAnimationFrame(loop);return}
 if(window.NET)NET.pre(dt);var _t0=performance.now();update(dt);var _t1=performance.now();if(window.NET)NET.post(dt);if(run)draw();if(window.NET&&NET.timing)NET.timing(_t1-_t0,performance.now()-_t1);
 requestAnimationFrame(loop);
 }
@@ -789,7 +795,7 @@ $("nx").addEventListener("click",closeShop);
 $("bs").addEventListener("click",function(){openShop(false)});
 $("bw").addEventListener("click",function(){if(run)cycle(1)});$("bp").addEventListener("click",function(){if(run)petSkill()});$("bz").addEventListener("click",function(){if(run)useItem("bomb")});$("bx").addEventListener("click",function(){if(run)useItem("shield")});$("bc").addEventListener("click",function(){if(run)useItem("heal")});$("bv").addEventListener("click",function(){if(run)useItem("haste")});
 function menuShop(){if(run)return;if(!S)S=mkS();S.next=false;S.menu=1;S.tab="w";$("nx").textContent="Back";renderShop();$("shop").classList.remove("off")}
-async function start(){if(S)save();reset();$("ov").classList.add("off");if(S.mode==16||S.mode==17)await goOnline();run=true;go()}
+async function start(){if(S)save();reset();paused=false;$("pz").classList.add("off");$("ov").classList.add("off");if(S.mode==16||S.mode==17)await goOnline();run=true;go()}
 function over(win){
 run=false;if(S.room){try{S.room.leave()}catch(e){}S.room=null}record(win);save();
 if(S.score>hi){hi=S.score;$("hi").textContent=hi;try{localStorage.setItem("zhi",hi)}catch(e){}}
@@ -799,6 +805,7 @@ $("go").textContent="Play again";$("ov").classList.remove("off");
 }
 function pos(e){var r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height,hx:(e.clientX-r.left)/r.width}}
 cv.addEventListener("pointerdown",function(e){
+if(paused){setPause(false);return}
 var q=pos(e);
 if(e.pointerType=="mouse"){mouse.x=q.x;mouse.y=q.y;mouse.down=true;return}
 cv.setPointerCapture(e.pointerId);
@@ -822,12 +829,15 @@ window.addEventListener("mouseup",function(){mouse.down=false});
 window.addEventListener("keydown",function(e){
 if(e.target&&e.target.tagName=="INPUT")return;
 var k=e.key.toLowerCase();keys[k]=true;
+if(k=="p"||k=="escape"){setPause(!paused);e.preventDefault()}
+if(paused)return;
 if(run){if(k=="r")reload();if(k=="f")petSkill();if(k=="t")emote();if(k=="z")useItem("bomb");if(k=="x")useItem("shield");if(k=="c")useItem("heal");if(k=="v")useItem("haste");if(k=="q")cycle(-1);if(k=="e")cycle(1);if("12345".indexOf(k)>=0&&k.length==1)equip(best(+k-1));if(k=="b")openShop(false)}
 else if(k=="b"&&S&&!$("shop").classList.contains("off"))closeShop();
 if(k.indexOf("arrow")==0||k==" ")e.preventDefault();
 });
 window.addEventListener("keyup",function(e){keys[e.key.toLowerCase()]=false});
-window.addEventListener("blur",function(){keys={};mouse.down=false});
+window.addEventListener("blur",function(){keys={};mouse.down=false;if(run)setPause(true)});
+document.addEventListener("visibilitychange",function(){if(document.hidden&&run)setPause(true)});
 var MD=[{n:"Survival",d:"Fight off endless waves"},{n:"Horde",d:"Twice as many zombies, but weaker"},{n:"Boss Hunt",d:"One giant boss every wave"},{n:"3 Minutes",d:"Kill as many as you can in 180 seconds"},{n:"Hell",d:"Low HP, fast zombies, coins ×2, rain"},{n:"(removed)",d:""},{n:"One Touch",d:"Only 30 HP, damage ×2.5, score ×3"},{n:"Endless",d:"No breaks, zombies thicken over time"},{n:"Night of Horror",d:"Halloween: all pumpkin zombies, candy ×3, boss every 3 waves"},{n:"Practice",d:"Invulnerable, no rewards, try any gun"},{n:"Twin Boss",d:"Two bosses at once each wave, rewards ×1.4"},{n:"Blood Moon",d:"Permanent blood moon, boss every 5 waves"},{n:"Pet Squad",d:"Pets are 3× stronger, your damage drops to 40%"},{n:"Fog",d:"Tiny view radius, only zombie eyes visible, score ×1.6"},{n:"Fast Forward",d:"Everything runs 1.5× faster, score ×1.5"},{n:"Bomb Chain",d:"All bomber zombies, keep your distance"},{n:"Online · Co-op",d:"Shared room, revive teammates, team score (needs a room code)"},{n:"Online · Arena",d:"Shoot other players, first to 15 kills wins"},{n:"Safe Zone",d:"Stay in the light to score, lose HP outside, the zone keeps moving"},{n:"Elite",d:"Fewer zombies but all tough leaders, rewards ×1.5"},{n:"Hourglass",d:"Each wave has a timer, overrun and you bleed"},{n:"Ghosts",d:"All ghosts are semi-transparent and charge fast"}];
 var DB=null,UID=null,UU=null,cloudT=0,lbm=0;
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
