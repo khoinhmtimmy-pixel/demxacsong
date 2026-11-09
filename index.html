@@ -9,27 +9,49 @@
 <style>
 :root{--bg:#070d0b;--panel:#12201a;--ink:#e6efe3;--dim:#8aa396;--acid:#9be15d;--blood:#c2362b;--gold:#ffc83d;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);color-scheme:dark;font-family:"Be Vietnam Pro",system-ui,sans-serif;overflow:hidden;touch-action:none}
+html,body{height:100%;margin:0;background:
+radial-gradient(1100px 700px at 50% -15%,#14352a 0%,#0a1713 42%,#05090a 100%),
+radial-gradient(700px 500px at 8% 108%,#1d1436 0%,#0000 70%),
+radial-gradient(700px 500px at 100% 100%,#2a1010 0%,#0000 65%),var(--bg);color:var(--ink);color-scheme:dark;font-family:"Be Vietnam Pro",system-ui,sans-serif;overflow:hidden;touch-action:none}
 #wrap{height:100%;display:flex;align-items:center;justify-content:center}
 #stage{position:relative;aspect-ratio:960/600;width:min(100vw,calc((100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))*1.6));max-height:100%}
-canvas{width:100%;height:100%;display:block;background:#0e1a15;cursor:crosshair;border-radius:6px}
+canvas{width:100%;height:100%;display:block;background:#0e1a15;cursor:crosshair;border-radius:12px}
+#stage{box-shadow:0 40px 90px -30px #000,0 0 0 1px #ffffff12,0 0 70px -18px #9be15d26;border-radius:12px}
+#vig{position:absolute;inset:0;border-radius:12px;pointer-events:none;
+background:radial-gradient(125% 95% at 50% 42%,#0000 52%,#00000066 100%);
+box-shadow:inset 0 0 90px 10px #0007,inset 0 0 22px 2px #0005}
 #hud{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;padding:10px 14px;pointer-events:none;font-weight:800;font-size:clamp(11px,2vw,18px);text-shadow:0 1px 3px #000;line-height:1.35}
-#hud>span{background:rgba(8,16,13,.55);padding:6px 10px;border-radius:10px;border:1px solid #ffffff14}#hud b{color:var(--acid)}#hud .c{color:var(--gold)}
-#bar{width:clamp(90px,20vw,200px);height:10px;background:#0008;border:1px solid #fff3;border-radius:5px;overflow:hidden;margin:4px auto 0}
-#abw{width:clamp(90px,20vw,200px);height:5px;background:#0008;border-radius:3px;overflow:hidden;margin:3px auto 0}#abw i{display:block;height:100%;background:#ffc83d}
-#bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#a82a20,#e0523f);transition:width .15s}
+#hud>span{background:linear-gradient(180deg,#0d1b17d9,#07100dd9);padding:7px 12px;border-radius:12px;border:1px solid #ffffff1f;box-shadow:0 8px 20px -10px #000,inset 0 1px 0 #ffffff14;backdrop-filter:blur(6px)}
+#hud b{color:var(--acid);text-shadow:0 0 12px #9be15d70}#hud .c{color:var(--gold);text-shadow:0 0 12px #ffc83d60}
+#bar{width:clamp(90px,20vw,200px);height:12px;background:#000000b3;border:1px solid #ffffff2b;border-radius:6px;overflow:hidden;margin:5px auto 0;box-shadow:inset 0 1px 4px #000c}
+#abw{width:clamp(90px,20vw,200px);height:6px;background:#000000b3;border-radius:3px;overflow:hidden;margin:4px auto 0;box-shadow:inset 0 1px 3px #000c}
+#abw i{display:block;height:100%;background:linear-gradient(90deg,#c99a1e,#ffd35c);box-shadow:0 0 10px #ffc83d70}
+#bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#8e1d16,#e0523f 62%,#ff8a5c);box-shadow:0 0 12px #e0523f88;transition:width .15s}
+#bar.low i{animation:hbp .9s ease-in-out infinite}
+@keyframes hbp{50%{filter:brightness(1.5);box-shadow:0 0 20px #ff4a3a}}
 #btns{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}
 #btns2{position:absolute;right:10px;bottom:104px;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 #btns2 button{padding:6px 10px;font-size:clamp(10px,1.6vw,13px);background:#0b1411cc;color:var(--ink);border:1px solid #ffffff30}
 #btns button{padding:6px 10px;font-size:clamp(10px,1.6vw,13px);background:#0b1411cc;color:var(--ink);border:1px solid #ffffff30}
-.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;text-align:center;background:radial-gradient(ellipse at 50% 25%,#12301fee 0%,#040a08f2 65%);border-radius:6px;padding:12px;box-sizing:border-box}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;text-align:center;
+background:radial-gradient(ellipse at 50% 18%,#143423f2 0%,#050c0af7 62%),radial-gradient(600px 320px at 50% 0%,#9be15d14 0%,#0000 70%);
+border-radius:12px;padding:14px;box-sizing:border-box;animation:ovin .26s ease-out}
+@keyframes ovin{from{opacity:0;transform:scale(.992)}}
 .ov.off{display:none}
 .ov::before,.ov::after{content:"";margin:auto}
-h1{font-size:clamp(24px,5vw,48px);margin:0 0 6px;font-weight:800;letter-spacing:-.02em;color:var(--acid);text-shadow:0 0 24px #9be15d55}
+h1{font-size:clamp(24px,5vw,48px);margin:0 0 6px;font-weight:800;letter-spacing:-.015em;
+background:linear-gradient(180deg,#f0ffd9,#9be15d 58%,#5aa832);-webkit-background-clip:text;background-clip:text;
+color:transparent;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 26px #9be15d55) drop-shadow(0 2px 2px #0009)}
 p{margin:4px 0;color:var(--dim);font-size:clamp(11px,1.9vw,15px);max-width:54ch;line-height:1.5}
 button{font:inherit;font-weight:800;border:0;border-radius:8px;cursor:pointer}
 button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
-.big{margin-top:10px;font-size:clamp(13px,2vw,18px);padding:10px 24px;background:var(--acid);color:#0b1411}
+.big{margin-top:10px;font-size:clamp(13px,2vw,18px);padding:10px 24px;background:linear-gradient(180deg,#aef473,#7ccb42);color:#08150c;
+box-shadow:0 10px 24px -12px #9be15d,inset 0 1px 0 #ffffff70;transition:transform .12s ease,filter .18s ease,box-shadow .18s ease}
+.big:hover{transform:translateY(-1px);filter:brightness(1.05);box-shadow:0 14px 28px -12px #9be15d,inset 0 1px 0 #ffffff8c}
+.big:active{transform:translateY(1px) scale(.995)}
+.big.alt{background:linear-gradient(180deg,#1a2b24,#0d1814);color:var(--ink);border:1px solid #ffffff1f;
+box-shadow:0 8px 20px -14px #000,inset 0 1px 0 #ffffff12}
+.big.alt:hover{background:linear-gradient(180deg,#22362d,#122019);box-shadow:0 12px 24px -14px #000,inset 0 1px 0 #ffffff1c}
 #shh{display:flex;align-items:baseline;gap:14px}#shh h1{font-size:clamp(20px,3.6vw,34px);margin:0}
 #sh{color:var(--gold);font-weight:800;font-size:clamp(13px,2.2vw,18px)}
 #tabs,#sub,#pg{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:6px}
@@ -37,7 +59,9 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #tabs button.on,#sub button.on{background:var(--acid);color:#0b1411}
 #pg span{align-self:center;font-size:clamp(10px,1.7vw,13px);color:var(--dim)}
 #items{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px;width:min(100%,860px);flex:1;min-height:0;overflow-y:auto;margin-top:8px;padding:2px;align-content:start}
-.it{background:var(--panel);border:1px solid #ffffff14;border-left:4px solid var(--rc,#8a9a94);border-radius:8px;padding:8px;text-align:left;font-size:clamp(10px,1.5vw,12px);line-height:1.4}
+.it{background:linear-gradient(180deg,#152420,#0e1915);border:1px solid #ffffff14;border-left:4px solid var(--rc,#8a9a94);border-radius:9px;padding:9px;text-align:left;
+font-size:clamp(10px,1.5vw,12px);line-height:1.4;transition:transform .14s ease,border-color .18s ease,box-shadow .18s ease}
+.it:hover{transform:translateY(-2px);border-color:#ffffff2e;box-shadow:0 16px 28px -18px #000,0 0 0 1px #ffffff0f inset}
 .it h3{margin:0;font-size:1.1em}.it small{color:var(--rc,var(--dim));font-weight:800}.it p{margin:3px 0 6px;font-size:1em}
 .it button{width:100%;padding:6px;font-size:1em;background:var(--gold);color:#241a00}
 .it button:disabled{background:#2a3631;color:#6d8176;cursor:default}
@@ -90,14 +114,33 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #hud{padding:6px 8px}
 #rot{bottom:56px}}
 @media (orientation:portrait) and (pointer:coarse){#rot{display:block}}
-#msg{position:absolute;left:0;right:0;top:34%;text-align:center;font-weight:800;font-size:clamp(20px,5vw,44px);color:var(--gold);pointer-events:none;opacity:0;transition:opacity .4s;text-shadow:0 2px 12px #000}
+#msg{position:absolute;left:0;right:0;top:33%;text-align:center;font-weight:800;font-size:clamp(22px,5.4vw,48px);pointer-events:none;opacity:0;transition:opacity .4s;
+background:linear-gradient(180deg,#fff8d2,#ffc83d 58%,#e08a1a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+filter:drop-shadow(0 3px 12px #000b) drop-shadow(0 0 28px #ffc83d55)}
+button{transition:transform .1s ease,filter .15s ease,background .15s ease}
+button:active{transform:translateY(1px)}
+#tabs button,#sub button,#pg button,#modes button,#diff button,#lbt button,#sgn div{transition:transform .12s ease,border-color .18s ease,background .18s ease}
+#tabs button:hover,#sub button:hover,#lbt button:hover,#diff button:hover{border-color:#ffffff3a}
+#modes button:hover{transform:translateY(-1px);border-color:#9be15d66}
+#modes button.on{background:linear-gradient(180deg,#1d3326,#12241b)}
+#bxi .bc{background:linear-gradient(180deg,#152420,#0e1915);transition:transform .14s ease,border-color .18s ease}
+#bxi .bc:hover{transform:translateY(-1px)}
+#dli .dr{background:linear-gradient(180deg,#152420,#0e1915)}
+#shh h1{filter:drop-shadow(0 0 22px #9be15d44)}
+#items::-webkit-scrollbar,#lbl::-webkit-scrollbar,.ov::-webkit-scrollbar{width:8px}
+#items::-webkit-scrollbar-track,.ov::-webkit-scrollbar-track{background:#00000040;border-radius:8px}
+#items::-webkit-scrollbar-thumb,.ov::-webkit-scrollbar-thumb{background:#ffffff26;border-radius:8px}
+#items::-webkit-scrollbar-thumb:hover,.ov::-webkit-scrollbar-thumb:hover{background:#ffffff3d}
+#nick:focus,#rc:focus,#au input:focus{outline:2px solid #9be15d88;outline-offset:1px;border-color:#9be15d66}
+#sh{text-shadow:0 0 14px #ffc83d70}
+#ev{text-shadow:0 2px 8px #000,0 0 18px #ffb34755}
 </style>
 <script src="lang.js"></script>
 <script src="net.js"></script>
 </head>
 <body>
 <div id="wrap"><div id="stage">
-<canvas id="c" width="960" height="600"></canvas>
+<canvas id="c" width="960" height="600"></canvas><div id="vig"></div>
 <div id="hud">
 <span>Score <b id="sc">0</b><br><span id="wl">Wave</span> <b id="wv">1</b></span>
 <span style="text-align:center"><b id="wn"></b> <span id="am"></span><div id="bar"><i id="hp"></i></div><div id="abw"><i id="ab"></i></div></span>
@@ -426,7 +469,7 @@ x.fillStyle="rgba(30,0,0,.28)";x.beginPath();x.ellipse(0,0,r*1.4,r*1.1,0,0,TAU);
 function hud(){
 $("sc").textContent=S.score;$("wl").textContent=(S.mode==3||S.mode==5)?"Time":"Wave";$("wv").textContent=(S.mode==3||S.mode==5)?Math.ceil(S.tl)+"s":S.wave;$("co").textContent=S.coin;$("wn").textContent=gun().n;$("wn").style.color=gun().col;if(S.inv){$("bz").textContent="Bomb Z·"+(S.inv.bomb|0);$("bx").textContent="Shield X·"+(S.inv.shield|0);$("bc").textContent="HP C·"+(S.inv.heal|0);$("bv").textContent="Speed V·"+(S.inv.haste|0)}
 if(S.p.rl<=0)$("am").textContent=gun().me?"∞":S.p.ammo+"/"+mag();
-$("hp").style.width=Math.max(0,S.p.hp/S.p.max*100)+"%";$("ab").style.width=Math.max(0,Math.min(100,(gun().me?100:S.p.ammo/mag()*100)))+"%";
+$("hp").style.width=Math.max(0,S.p.hp/S.p.max*100)+"%";$("bar").classList.toggle("low",S.p.hp/S.p.max<.32);$("ab").style.width=Math.max(0,Math.min(100,(gun().me?100:S.p.ammo/mag()*100)))+"%";
 }
 var CH=[{n:"Wooden chest",c:"#a9743a",gold:1,gun:.15,gp:300,up:0,cost:500},{n:"Silver chest",c:"#c4ccd4",gold:2.5,gun:.3,gp:1500,up:.1,pet:.05,cost:2500},{n:"Gold chest",c:"#ffc83d",gold:6,gun:.6,gp:6000,up:.3,pet:.1,cost:10000},{n:"Halloween chest",c:"#ff8a1f",gold:4,gun:.5,gp:3000,up:.2,cost:0,ev:1},{n:"Mythic chest",c:"#ff4fd8",gold:15,gun:.9,gp:30000,up:.6,pet:.2,cost:40000},{n:"Pet chest",c:"#4fe3c1",gold:2,gun:0,gp:0,up:0,pet:1,cost:3000},{n:"Diamond chest",c:"#7ee8ff",gold:40,gun:1,gp:100000,up:.9,pet:.35,cost:120000},{n:"Iron chest",c:"#8d9aa6",gold:1.7,gun:.22,gp:800,up:.03,cost:1200},{n:"Emerald chest",c:"#2fd07a",gold:9,gun:.75,gp:12000,up:.45,pet:.15,cost:20000},{n:"Ruby chest",c:"#ff3a55",gold:25,gun:.95,gp:60000,up:.8,pet:.3,cost:60000},{n:"Platinum chest",c:"#e6f0ff",gold:70,gun:1,gp:100000,up:1,pet:.5,cost:250000},{n:"Rainbow chest",c:"#ff9af0",gold:200,gun:1,gp:200000,up:1,pet:1,cost:800000},{n:"Bronze chest",c:"#c98a4a",gold:4,gun:.45,gp:4000,up:.2,pet:.08,cost:6000},{n:"Dark chest",c:"#7a3aff",gold:500,gun:1,gp:300000,up:1,pet:1,cost:1500000},{n:"Giant chest",c:"#ffd24a",gold:2000,gun:1,gp:500000,up:1,pet:1,cost:5000000},{n:"Glass chest",c:"#9ad8ff",gold:12,gun:.8,gp:25000,up:.5,pet:.2,cost:40000},{n:"Lava chest",c:"#ff5a1a",gold:120,gun:1,gp:150000,up:1,pet:.7,cost:400000},{n:"Moon chest",c:"#c8d8ff",gold:20,gun:.85,gp:50000,up:.6,pet:.25,cost:80000},{n:"Galaxy chest",c:"#b06aff",gold:1000,gun:1,gp:400000,up:1,pet:1,cost:3000000},{n:"Pearl chest",c:"#f2e6d0",gold:6,gun:.55,gp:8000,up:.35,pet:.12,cost:15000},{n:"Amber chest",c:"#ffb347",gold:10,gun:.7,gp:15000,up:.4,pet:.15,cost:30000},{n:"Meteor chest",c:"#9ae0ff",gold:60,gun:.95,gp:80000,up:.8,pet:.4,cost:150000},{n:"Nebula chest",c:"#d58aff",gold:600,gun:1,gp:350000,up:1,pet:1,cost:2000000},{n:"Swamp chest",c:"#5aa078",gold:5,gun:.5,gp:6000,up:.3,pet:.1,cost:25000},{n:"Ice chest",c:"#bfe8ff",gold:12,gun:.7,gp:20000,up:.45,pet:.18,cost:60000},{n:"Desert chest",c:"#e8c27a",gold:25,gun:.85,gp:45000,up:.6,pet:.25,cost:120000},{n:"City chest",c:"#9aa0a8",gold:40,gun:.9,gp:70000,up:.7,pet:.3,cost:200000},{n:"Volcano chest",c:"#ff6a30",gold:150,gun:1,gp:200000,up:1,pet:.6,cost:500000},{n:"Mushroom chest",c:"#4ae8c8",gold:300,gun:1,gp:300000,up:1,pet:.8,cost:900000},{n:"Zombie chest",c:"#7aa84a",gold:3,gun:.4,gp:3000,up:.25,pet:.08,cost:8000},{n:"Chieftain chest",c:"#e8c040",gold:18,gun:.8,gp:30000,up:.5,pet:.2,cost:45000},{n:"Boss chest",c:"#c85050",gold:50,gun:.92,gp:90000,up:.75,pet:.35,cost:150000},{n:"King chest",c:"#ffd24a",gold:200,gun:1,gp:250000,up:1,pet:.7,cost:700000},{n:"Ancient chest",c:"#a88a5a",gold:400,gun:1,gp:350000,up:1,pet:.85,cost:1200000},{n:"Cosmic chest",c:"#8a7aff",gold:2500,gun:1,gp:600000,up:1,pet:1,cost:6000000}];
 function mkC(x,y,t){return{x:Math.max(30,Math.min(WW-30,x)),y:Math.max(30,Math.min(WH-30,y)),t:t,o:0,op:0,opn:0,life:150}}
@@ -575,7 +618,8 @@ function drawZ(z){
 if(z.x<S.cx-60||z.x>S.cx+W+60||z.y<S.cy-60||z.y>S.cy+H+60)return;
 if(z.mut&&Math.hypot(z.x-S.p.x,z.y-S.p.y)<MB.ar){if(z.mut&1)dsee("arm");if(z.mut&2)dsee("hdr");if(z.mut&4)dsee("tum");if(z.mut&8)dsee("spk");if(z.t==18)dsee("amt")}
 var r=z.r,sw=Math.sin(z.ph),f=z.fl>0,sk=f?"#fff":z.sk,cl=f?"#fff":z.cl,t=z.t,i;
-g.fillStyle="rgba(0,0,0,.38)";g.beginPath();g.ellipse(z.x+4,z.y+6,r*1.15,r*.85,0,0,TAU);g.fill();
+var zsh=g.createRadialGradient(z.x+4,z.y+7,1,z.x+4,z.y+7,r*1.3);zsh.addColorStop(0,"rgba(0,0,0,.5)");zsh.addColorStop(.6,"rgba(0,0,0,.26)");zsh.addColorStop(1,"rgba(0,0,0,0)");
+g.fillStyle=zsh;g.beginPath();g.ellipse(z.x+4,z.y+7,r*1.3,r*1.02,0,0,TAU);g.fill();
 if(z.burn>0){g.fillStyle="rgba(255,"+(120+R()*100|0)+",30,.7)";g.beginPath();g.arc(z.x+(R()-.5)*r,z.y-r*.5-R()*6,r*.45,0,TAU);g.fill()}
 g.save();g.translate(z.x,z.y);g.rotate(z.a);if(t==8)g.globalAlpha=.55;if(t==17)g.globalAlpha=.6;
 if(t==1)g.scale(1,.82);
@@ -590,6 +634,7 @@ g.fillStyle=sk;g.beginPath();g.arc(hx,hy,r*.17,0,TAU);g.fill();
 if(!f){g.strokeStyle="#d8d2bd";g.lineWidth=1.3;g.beginPath();for(var c=-1;c<2;c++){g.moveTo(hx,hy);g.lineTo(hx+r*.3,hy+c*r*.15)}g.stroke()}}
 var tg=g.createRadialGradient(-r*.2,-r*.3,r*.1,0,0,r);tg.addColorStop(0,f?"#fff":lit(z.cl,40));tg.addColorStop(1,cl);
 g.fillStyle=tg;g.beginPath();g.ellipse(-r*.1,0,r*.62,r*.98,0,0,TAU);g.fill();
+if(!f){g.strokeStyle="rgba(4,9,8,.5)";g.lineWidth=1.6;g.stroke()}
 if(!f){
 g.strokeStyle="rgba(0,0,0,.3)";g.lineWidth=1;g.beginPath();for(i=0;i<3;i++){g.moveTo(-r*.5,-r*.3+i*r*.3);g.lineTo(-r*.05,-r*.25+i*r*.3)}g.stroke();
 g.fillStyle="rgba(0,0,0,.3)";g.fillRect(-r*.55,-r*.2+(z.sd%.4)*r,r*.3,r*.22);
@@ -675,7 +720,8 @@ g.fillStyle="#ff4a3a";g.fillRect(bx-3,by,2,2);g.fillRect(bx+2,by,2,2)}
 ghosts()}
 function drawP(){
 var p=S.p,w=gun(),h=p.hit>0&&((p.hit*24)|0)%2;
-g.fillStyle="rgba(0,0,0,.35)";g.beginPath();g.ellipse(p.x+3,p.y+5,16,13,0,0,TAU);g.fill();
+var psh=g.createRadialGradient(p.x,p.y+7,2,p.x,p.y+7,21);psh.addColorStop(0,"rgba(0,0,0,.5)");psh.addColorStop(.6,"rgba(0,0,0,.24)");psh.addColorStop(1,"rgba(0,0,0,0)");
+g.fillStyle=psh;g.beginPath();g.ellipse(p.x+2,p.y+7,21,17,0,0,TAU);g.fill();
 g.save();g.translate(p.x,p.y);g.rotate(p.a);
 var ws=Math.sin(S.pw||0)*5;g.fillStyle="#1d1a17";g.beginPath();g.ellipse(-3+ws,-7,5.5,3.2,0,0,TAU);g.ellipse(-3-ws,7,5.5,3.2,0,0,TAU);g.fill();
 g.fillStyle="#2a2f33";g.fillRect(8,-3.5,w.len,7);
@@ -685,6 +731,7 @@ if(w.c==4){g.fillStyle="#111";g.fillRect(18,-7,12,3.5)}
 g.fillStyle=w.col;g.fillRect(10,-1,w.len-6,2);g.fillStyle="#7d858b";g.fillRect(8+w.len-6,-2,6,4);
 g.fillStyle="#d4b48a";g.beginPath();g.arc(12,-7,4.2,0,TAU);g.arc(8+w.len*.62,3,4.2,0,TAU);g.fill();
 g.fillStyle=h?"#fff":(SKB[S.sk.b]||SKB[0])[1];g.beginPath();g.ellipse(-2,0,9,15,0,0,TAU);g.fill();
+g.strokeStyle="rgba(230,255,220,.28)";g.lineWidth=1.4;g.stroke();
 g.fillStyle=h?"#fff":shd((SKB[S.sk.b]||SKB[0])[1],-30);g.fillRect(-9,-5,6,10);
 g.fillStyle=h?"#fff":"#566b48";g.beginPath();g.arc(1,0,9,0,TAU);g.fill();
 g.fillStyle="rgba(255,255,255,.22)";g.beginPath();g.ellipse(-1,-3,5,3,0,0,TAU);g.fill();
@@ -729,7 +776,11 @@ for(var xx=Math.floor((p.x-700)/2000)*2000+1200;xx<p.x+700;xx+=2000)g.fillRect(o
 g.fillStyle="#ff4a3a";S.z.forEach(function(z){g.fillRect(ox+z.x*k-1,oy+z.y*k-1,2,2)});if(S.room){g.fillStyle="#6ad0ff";S.room.peers().forEach(function(pr){var r=S.rp[pr.peer];if(!pr.isMe&&r)g.fillRect(ox+r.x*k-2,oy+r.y*k-2,4,4)})}
 g.fillStyle="#ffe45c";S.ch.forEach(function(o){g.fillRect(ox+o.x*k-2,oy+o.y*k-2,4,4)});if(HW){g.fillStyle="#ffb347";S.it.forEach(function(o){g.fillRect(ox+o.x*k-1,oy+o.y*k-1,3,3)})}
 g.fillStyle="#9be15d";g.fillRect(mx+58,my+38,4,4);g.restore();
-g.strokeStyle="rgba(255,255,255,.3)";g.lineWidth=1;g.strokeRect(mx,my,120,80);drawBoard();zoneArrow();
+var mfr=g.createLinearGradient(mx,my,mx+120,my+80);mfr.addColorStop(0,"rgba(155,225,93,.5)");mfr.addColorStop(1,"rgba(155,225,93,.12)");
+g.strokeStyle=mfr;g.lineWidth=1.5;g.strokeRect(mx,my,120,80);
+g.strokeStyle="rgba(155,225,93,.6)";g.lineWidth=2;
+[[0,0,1,1],[120,0,-1,1],[0,80,1,-1],[120,80,-1,-1]].forEach(function(cn){g.beginPath();g.moveTo(mx+cn[0],my+cn[1]+cn[3]*9);g.lineTo(mx+cn[0],my+cn[1]);g.lineTo(mx+cn[0]+cn[2]*9,my+cn[1]);g.stroke()});
+drawBoard();zoneArrow();
 g.strokeStyle="#9be15d";g.lineWidth=1.6;g.beginPath();g.arc(mouse.x,mouse.y,9,0,TAU);g.moveTo(mouse.x-15,mouse.y);g.lineTo(mouse.x-5,mouse.y);g.moveTo(mouse.x+5,mouse.y);g.lineTo(mouse.x+15,mouse.y);g.moveTo(mouse.x,mouse.y-15);g.lineTo(mouse.x,mouse.y-5);g.moveTo(mouse.x,mouse.y+5);g.lineTo(mouse.x,mouse.y+15);g.stroke();
 }
 var looping=false,paused=false;
