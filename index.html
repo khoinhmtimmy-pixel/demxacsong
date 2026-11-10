@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Đêm Xác Sống</title>
+<title>AOZ: Attack on Zombies</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;800&display=swap">
 <style>
@@ -134,6 +134,11 @@ button:active{transform:translateY(1px)}
 #nick:focus,#rc:focus,#au input:focus{outline:2px solid #9be15d88;outline-offset:1px;border-color:#9be15d66}
 #sh{text-shadow:0 0 14px #ffc83d70}
 #ev{text-shadow:0 2px 8px #000,0 0 18px #ffb34755}
+#sto{display:none;position:absolute;left:50%;top:56px;transform:translateX(-50%);width:min(88%,560px);
+background:linear-gradient(180deg,#0d1b17e6,#07100de6);border:1px solid #ffffff1f;border-left:3px solid var(--acid);
+border-radius:10px;padding:7px 11px;pointer-events:none;font-size:clamp(10px,1.5vw,12.5px);line-height:1.45;
+box-shadow:0 10px 24px -14px #000,inset 0 1px 0 #ffffff10;text-align:left}
+#sto.on{display:block;animation:ovin .3s ease-out}
 </style>
 <script src="lang.js"></script>
 <script src="net.js"></script>
@@ -147,9 +152,9 @@ button:active{transform:translateY(1px)}
 <span style="text-align:right">Coins <b class="c" id="co">0</b><br>Best <b id="hi">0</b></span>
 </div>
 <div id="btns"><button id="bs">Shop (B)</button><button id="bw">Switch gun (Q/E)</button><button id="bp">Pet skill (F)</button><button id="br">Reload</button><button id="bsp">Sprint</button><button id="bpa">Pause</button></div><div id="btns2"><button id="bz">Bomb Z</button><button id="bx">Shield X</button><button id="bc">HP C</button><button id="bv">Speed V</button></div>
-<div id="ev"></div><div id="rot">Rotate your phone for a bigger view</div><div id="msg"></div><div id="pz" class="off"><b>Paused</b><span>Press P or click to resume</span></div>
+<div id="ev"></div><div id="sto"></div><div id="rot">Rotate your phone for a bigger view</div><div id="msg"></div><div id="pz" class="off"><b>Paused</b><span>Press P or click to resume</span></div>
 <div id="ov" class="ov">
-<h1 id="t">Đêm Xác Sống</h1>
+<h1 id="t">AOZ: Attack on Zombies</h1>
 <p id="d">You are stranded in a vast abandoned town at midnight. Kill zombies to earn coins, then buy guns (500 of them) and upgrades in the shop. Find chests on the map and stand near them to open, or buy chests in the shop. Coins, guns and upgrades are saved between runs.</p>
 <p>Move: W A S D · Aim and shoot: mouse · Reload: R · Sprint: Shift · Pause: P<br>Switch gun: Q/E, mouse wheel or keys 1–5 (pick by class) · Shop: B (any time) · Pet skill: F · Items: Z X C V · Quick chat online: T<br>Phone: touch the left half to move, the right half to aim and shoot. The bottom buttons reload, sprint and pause.</p>
 <div id="modes"></div>
@@ -238,7 +243,27 @@ for(var sk6=30;sk6<34;sk6++){PSP.push(sk6);for(var v6=0;v6<25;v6++){var tr6=v6<8
 for(var sk7=34;sk7<38;sk7++){PSP.push(sk7);for(var v7=0;v7<25;v7++){var tr7=v7<8?0:v7<15?1:v7<21?2:3;PT.push({id:PT.length,sp:sk7,tr:tr7,gen:1,n:SPS[sk7].n+" "+PADJ[v7%25]+" Mk5",price:Math.round(900*Math.pow(1.19,v7)*(1+(sk7-34)*.05)/50)*50,col:TR[tr7].c,gc:hex((v7*59+sk7*83)%360,.6,.55),m:1.3+v7*.42,sc:.9+v7*.01})}}
 var PTS=PT.slice().sort(function(a,b){return a.price-b.price||a.id-b.id});
 var SK=["#6fa83a","#7fb04c","#5d9a52","#8aa857"],CL=["#3a4a63","#5a3a3a","#3d4d3a","#4a4a4a","#5c4a2c"];
-function gun(){return G[S.gi]}
+var KNF={c:5,L:0,n:"Rusty knife",price:0,rar:0,col:"#9aa4a0",dmg:9,cd:.5,mag:0,me:1,reach:56,arc:1.5,pel:1,spr:0,v:0,life:1,len:4,pierce:0,dps:0,id:-1};
+var AOZC=[{w:1,o:"Loot a weapon from a supply crate",n:"Year 845. The outer wall fell in the night. You woke in the rubble with a rusty knife and no squad."},
+{w:2,o:"Search the ruins for ammo and medkits",n:"Every crate is a chance. Take what the dead left behind."},
+{w:4,o:"Hold the gate until the scouts return",n:"The scouts are out beyond the wall. Nobody has come back yet."},
+{w:6,o:"A horde is massing beyond the wall",n:"They walk in ranks now. They are learning."},
+{w:9,o:"Something huge is coming through the breach",n:"The breach is wider than the wall is thick. Nobody is coming to save you."},
+{w:13,o:"Fall back to the inner gate",n:"Inner gate. Behind it, the last of the living."},
+{w:18,o:"The Wall Guard is gone. You are the line",n:"You are the Wall Guard now. One knife, one line."},
+{w:25,o:"Beyond the wall the dead never stop",n:"The dead outside do not sleep. Neither do you."}];
+function aozT(s){try{if(!window.translateText)return s;var r=window.translateText(s);return r||s}catch(e){return s}}
+function mkS(){var s=mkS0();if(s.mode==0){s.sv=1;s.own={};s.gi=-1;s.inv={bomb:0,shield:0,heal:0,haste:0};s.p.ammo=0;s.ci=-1}return s}
+function aozStory(){var el=$("sto");if(!el)return;if(!S||!S.sv||!run){el.className="";return}
+var w=S.wave,ci=0;for(var i=0;i<AOZC.length;i++)if(w>=AOZC[i].w)ci=i;
+if(S.ci===ci&&S.stg)return;var first=S.stg==null;S.ci=ci;S.stg=1;
+el.textContent="";var a=document.createElement("div");a.style.fontWeight="800";a.style.color="#e9f7e2";
+a.textContent=aozT("Chapter")+" "+(ci+1)+" · "+aozT(AOZC[ci].o);
+var b=document.createElement("div");b.style.marginTop="2px";b.style.color="#a9b8b0";b.style.fontWeight="500";
+b.textContent=aozT(AOZC[ci].n);
+el.appendChild(a);el.appendChild(b);el.className="on";
+if(!first){msg(aozT("Chapter")+" "+(ci+1));S.ch.push(mkC(S.p.x+(R()*2-1)*170,S.p.y+(R()*2-1)*170,ci>=4?12:7))}}
+function gun(){return G[S.gi]||KNF}
 function mag(){return Math.ceil(gun().mag*(1+.25*S.lv.mag+.1*S.hw.hwmag))}
 function rlT(){return gun().rl*(1-.06*S.lv.rl-.06*S.hw.hwrl)}
 function cachePos(tx,ty){var r=rng((tx*2246822519^ty*3266489917)>>>0),o=[];if(r()<.012){var n=2+(r()*2|0),cx=120+r()*(TS-240),cy=120+r()*(TS-240);for(var i=0;i<n;i++){var a=i*TAU/n+r();o.push({x:tx*TS+cx+Math.cos(a)*34,y:ty*TS+cy+Math.sin(a)*34,t:r()<.05?8:r()<.15?2:r()<.3?7:r()<.5?1:r()<.6?5:0,cx:tx*TS+cx,cy:ty*TS+cy})}}return o}
@@ -323,12 +348,12 @@ x.fillStyle="#d9630e";x.beginPath();x.ellipse(pu,pv,12,10,0,0,TAU);x.fill();x.fi
 x.fillStyle="#2c6b1e";x.fillRect(pu-1,pv-13,3,5);x.fillStyle="#ffe45c";x.fillRect(pu-6,pv-3,4,4);x.fillRect(pu+2,pv-3,4,4);x.fillRect(pu-5,pv+3,10,2)}
 return c}
 /* ---- state ---- */
-function mkS(){if(!G[P.gi]||!P.own[P.gi])P.gi=0;if((P.mode==8&&!HW)||P.mode==5)P.mode=0;
+function mkS0(){if(!G[P.gi]||!P.own[P.gi])P.gi=0;if((P.mode==8&&!HW)||P.mode==5)P.mode=0;
 return{p:{x:49151200,y:32768800,hp:(P.mode==4?50:P.mode==6?30:80)+20*P.lv.hp+15*P.hw.hwhp+20*P.hw.hwhw,max:(P.mode==4?50:P.mode==6?30:80)+20*P.lv.hp+15*P.hw.hwhp+20*P.hw.hwhw,a:0,cd:0,ammo:0,rl:0,hit:0},cx:0,cy:0,b:[],z:[],f:[],sp:[],tx:[],it:[],itT:3,ch:[],chk:{},chT:3,bank:P.bank|0,rb:[],rp:{},rvp:{},rch:{},dead:0,dn:0,kills:0,dth:0,room:null,nm:"",inv:P.inv,cos:P.cos,sk:P.sk,haste:0,eb:[],sw:[],bolts:[],qi:0,q:null,rv:(P.hw.hwrev|0)+((P.lv.wil|0)/3|0),diff:P.diff|0,bf:0,last:"",tm:0,pets:P.pets,petId:P.pets[P.pet]?P.pet:-1,candy:P.candy|0,hw:P.hw,pe:null,pst:null,ht:0,mode:P.mode,dmx:P.mode==4?1.5:P.mode==6?2.5:P.mode==9?0:1,rwx:P.mode==4?2:P.mode==6?3:P.mode==8?1.5:P.mode==9?0:P.mode==10?1.4:P.mode==11?1.5:P.mode==12?1.3:P.mode==13?1.6:P.mode==14?1.5:P.mode==15?1.4:P.mode==16?1.2:P.mode==18?1.3:P.mode==19?1.5:P.mode==20?1.3:P.mode==21?1.4:1,T:(P.mode==5?120:180)+5*P.hw.hwtm,tl:(P.mode==5?120:180)+5*P.hw.hwtm,lt:(P.mode==5?120:180)+5*P.hw.hwtm,score:0,coin:P.coin,wave:0,toSpawn:0,gap:0,cl:0,shake:0,next:false,gi:P.gi,own:P.own,lv:P.lv,tab:"w",cls:-1,pg:0,pcls:-1,ppg:0,st:1,wx:R()*4|0}}
 function save(){if(S){P.coin=S.coin;P.gi=S.gi;P.pet=S.petId;P.candy=S.candy;P.bank=S.bank|0}P.t=Date.now();if(ACC)lset(ACC.n,{s:ACC.s,h:ACC.h,d:JSON.stringify(P),t:P.t});else try{localStorage.setItem("zprof",JSON.stringify(P))}catch(e){}cloudSave()}
-function reset(){TC={};TN=0;S=mkS();qnew();setPet();S.hx=S.p.x;S.hy=S.p.y;if(S.mode==18)S.zone={x:S.p.x,y:S.p.y,r:230};if(S.mode==17){S.q=null;var ang0=R()*TAU,rr0=150+R()*500;S.p.x+=Math.cos(ang0)*rr0;S.p.y+=Math.sin(ang0)*rr0}S.p.ammo=mag();nextWave();cam();hud()}
+function reset(){TC={};TN=0;S=mkS();qnew();setPet();S.hx=S.p.x;S.hy=S.p.y;if(S.mode==18)S.zone={x:S.p.x,y:S.p.y,r:230};if(S.mode==17){S.q=null;var ang0=R()*TAU,rr0=150+R()*500;S.p.x+=Math.cos(ang0)*rr0;S.p.y+=Math.sin(ang0)*rr0}S.p.ammo=mag();nextWave();if(S.sv){for(var si=0;si<3;si++){var sa=si*2.2,sd=80+si*48;S.ch.push(mkC(S.p.x+Math.cos(sa)*sd,S.p.y+Math.sin(sa)*sd,si==0?12:si==1?7:0))}}cam();hud()}
 function cam(){var p=S.p;S.cx=Math.round(Math.max(0,Math.min(WW-W,p.x-W/2)));S.cy=Math.round(Math.max(0,Math.min(WH-H,p.y-H/2)))}
-function nextWave(){S.wave++;var w=S.wave,m=S.mode;S.toSpawn=Math.round((m==1?(8+w*6)*2:(m==2||m==10)?2+w:8+w*6)*CNM[S.diff]*(S.mode==19?.6:1));S.gap=1.2;S.cl=0;S.p.hit=Math.max(S.p.hit,.5*S.hw.hwsh);S.p.hp=Math.min(S.p.max,S.p.hp+S.p.max*.05*S.hw.hwhd);S.wt=Math.max(30,62-2*w);S.bm=m==11||(w%10==0&&[0,1,4,6,8,16].indexOf(m)>=0);if(m==2||m==10){spawnBoss(w%6,false);if(m==10)spawnBoss((w+3)%6,false)}else if([0,1,4,6,8,11,12,13,16,18,19,20,21].indexOf(m)>=0&&w%(m==8?3:5)==0)spawnBoss(((w/(m==8?3:5)|0)-1)%6,HW);msg(S.bm?"Blood moon! Wave "+w:(m==2||m==10)?"Boss wave "+w:m==3?"Go! 180 seconds":m==5?"Treasure hunt! 120 seconds":m==7?"Endless! Stay alive":m==9?"Practice: invulnerable, no rewards":"Wave "+w)}
+function nextWave(){S.wave++;var w=S.wave,m=S.mode;S.toSpawn=Math.round((m==1?(8+w*6)*2:(m==2||m==10)?2+w:8+w*6)*CNM[S.diff]*(S.mode==19?.6:1));S.gap=1.2;S.cl=0;S.p.hit=Math.max(S.p.hit,.5*S.hw.hwsh);S.p.hp=Math.min(S.p.max,S.p.hp+S.p.max*.05*S.hw.hwhd);S.wt=Math.max(30,62-2*w);S.bm=m==11||(w%10==0&&[0,1,4,6,8,16].indexOf(m)>=0);if(m==2||m==10){spawnBoss(w%6,false);if(m==10)spawnBoss((w+3)%6,false)}else if([0,1,4,6,8,11,12,13,16,18,19,20,21].indexOf(m)>=0&&w%(m==8?3:5)==0)spawnBoss(((w/(m==8?3:5)|0)-1)%6,HW);msg(S.bm?"Blood moon! Wave "+w:(m==2||m==10)?"Boss wave "+w:m==3?"Go! 180 seconds":m==5?"Treasure hunt! 120 seconds":m==7?"Endless! Stay alive":m==9?"Practice: invulnerable, no rewards":"Wave "+w);if(S.sv){if(w<4){S.toSpawn=Math.max(2,Math.round((1.5+w*1.5)*CNM[S.diff]));S.gap=2.4}aozStory()}}
 var INV=[{k:"bomb",n:"Bomb (Z)",d:"Thrown at the aim point, explodes for heavy damage",cost:300},{k:"shield",n:"Shield (X)",d:"Invulnerable for 4s",cost:600},{k:"heal",n:"Medkit (C)",d:"Restore 50% HP",cost:400},{k:"haste",n:"Speed potion (V)",d:"8s of 40% speed and 30% fire rate",cost:500}];
 var SKB=[["Default","#3f5f80",0],["Battle Red","#a83a32",2000],["Forest","#3a7a4a",2000],["Night Purple","#6a3a9a",5000],["Ninja Black","#26262c",8000],["Gold","#c8a030",12000],["Ruby","#d04a8a",15000],["Snow White","#d8e0e8",20000]];
 var SKT=[["Default","255,226,150",0],["Blue","90,180,255",3000],["Emerald","110,255,140",3000],["Red","255,90,80",5000],["Purple","200,120,255",8000],["Rainbow","rg",30000]];
@@ -486,7 +511,7 @@ if(!pool.length){if(ev)return;var ow=Object.keys(S.pets);if(ow.length){var id=+o
 var r=R(),j=r<.55?0:r<.85?1:r<.97?2:3,cand=pool.filter(function(q){return ev||q.tr==j});if(!cand.length)cand=pool;var q=cand[R()*cand.length|0];
 S.pets[q.id]=1;out.push("Pets "+q.n);if(S.petId<0){S.petId=q.id;setPet()}}
 function roll(t){if(S.mode==9&&!S.menu)return "Practice: no rewards";var c=CH[t],w=S.wave||1,out=[],cn=Math.round(IM*(50+R()*60)*c.gold*(1+w*.25)*(1+.1*S.lv.gold+.1*S.hw.hwkc+.08*S.hw.hwrc)),pool=[];S.coin+=cn;out.push("+"+cn+" coins");
-if(R()<c.gun+.04*S.lv.luck+.03*S.hw.hwluck){if(c.ev&&HW)pool=G.filter(function(q){return q.ev&&!S.own[q.id]});
+if(R()<c.gun+.04*S.lv.luck+.03*S.hw.hwluck||(S.sv&&!Object.keys(S.own).length)){if(c.ev&&HW)pool=G.filter(function(q){return q.ev&&!S.own[q.id]});
 if(!pool.length)pool=G.filter(function(q){return !q.ev&&!S.own[q.id]&&q.price<=c.gp*(1+w*.25)}).slice(-8);
 if(pool.length){var q=pool[R()*pool.length|0];S.own[q.id]=1;out.push(q.n);if(q.dps>gun().dps)equip(q.id)}}
 if(c.ev){S.candy+=10;out.push("+10 candy")}if(c.pet&&R()<c.pet)givePet(out,0);if(c.ev&&HW&&R()<.3)givePet(out,1);
@@ -598,7 +623,7 @@ S.bolts.forEach(function(b){b.t-=dt});S.bolts=S.bolts.filter(function(b){return 
 S.ht-=dt;if(S.ht<=0){S.ht=.25;hud();evTxt()}
 S.cr=(S.cr||1200)-dt;if(S.cr<=0&&S.mode!=9&&S.mode!=17){S.cr=1200;msg("Chest rain!");for(var ci=0;ci<3;ci++){var cq=R()*TAU,cdq=150+R()*450;S.ch.push(mkC(p.x+Math.cos(cq)*cdq,p.y+Math.sin(cq)*cdq,[0,0,1,7,12,8,15,17][R()*8|0]))}}
 S.ad=(S.ad||600)-dt;if(S.ad<=0&&S.mode!=9&&S.mode!=17){S.ad=600;var aa=R()*TAU,ac=mkC(p.x+Math.cos(aa)*500,p.y+Math.sin(aa)*500,R()<.1?11:R()<.3?10:R()<.5?4:R()<.75?9:2);ac.beam=1;S.ch.push(ac);msg("A supply crate just dropped!")}
-S.chT-=dt;if(S.chT<=0&&S.mode!=9&&S.mode!=17&&S.ch.filter(function(c){return !c.perm}).length<6){S.chT=45*(1-.06*S.hw.hwchest);var r1=R(),tt=r1<.01?9:r1<.03?4:r1<.06?8:r1<Math.min(.15,.09+S.wave*.003)?2:r1<.22?5:r1<.30?12:r1<.40?7:r1<.58?1:0;if(HW&&R()<.15)tt=3;var ca=R()*TAU,cd=250+R()*400;var mc=mkC(p.x+Math.cos(ca)*cd,p.y+Math.sin(ca)*cd,tt);if(R()<.08)mc.mim=1;else if(R()<.05)mc.bomb=1;S.ch.push(mc)}
+S.chT-=dt;if(S.chT<=0&&S.mode!=9&&S.mode!=17&&S.ch.filter(function(c){return !c.perm}).length<(S.sv?9:6)){S.chT=(S.sv?14:45)*(1-.06*S.hw.hwchest);var r1=R(),tt=r1<.01?9:r1<.03?4:r1<.06?8:r1<Math.min(.15,.09+S.wave*.003)?2:r1<.22?5:r1<.30?12:r1<.40?7:r1<.58?1:0;if(HW&&R()<.15)tt=3;var ca=R()*TAU,cd=250+R()*400;var mc=mkC(p.x+Math.cos(ca)*cd,p.y+Math.sin(ca)*cd,tt);if(R()<.08)mc.mim=1;else if(R()<.05)mc.bomb=1;S.ch.push(mc)}
 S.ch.forEach(function(c){c.life-=dt*(1-.08*S.hw.hwdur);if(c.opn){c.op-=dt;return}
 if(Math.hypot(c.x-p.x,c.y-p.y)<46+4*S.hw.hwmgc){c.o+=dt/Math.max(.25,.8-.08*S.hw.hwmgc-.05*S.lv.chs);if(c.o>=1){c.opn=1;c.op=.7;var res=roll(c.t);if(window.NET&&!NET.world()&&c._nid)NET.chestOpened(c._nid);qprog("chest");S.candy+=2*S.hw.hwgc;if(S.mode==5)S.score+=100+50*c.t;if(c.bomb){res+=" · "+roll(c.t)+" (Bomb chest!)";S.sw.push({x:c.x,y:c.y,t:.7,r:0,sm:1});if(Math.hypot(c.x-p.x,c.y-p.y)<110&&p.hit<=0){p.hp-=25*am;p.hit=.6;S.shake=10}}
 if(c.mim){res+=" · "+roll(c.t)+" (Monster chest!)";for(var mi=0;mi<4;mi++){var mA=R()*TAU;S.z.push(mini(c.x+Math.cos(mA)*60,c.y+Math.sin(mA)*60))}}S.tx.push({x:c.x,y:c.y-26,t:2.4,s:CH[c.t].n+": "+res,c:CH[c.t].c});S.shake=Math.max(S.shake,4);
@@ -725,6 +750,7 @@ g.fillStyle=psh;g.beginPath();g.ellipse(p.x+2,p.y+7,21,17,0,0,TAU);g.fill();
 g.save();g.translate(p.x,p.y);g.rotate(p.a);
 var ws=Math.sin(S.pw||0)*5;g.fillStyle="#1d1a17";g.beginPath();g.ellipse(-3+ws,-7,5.5,3.2,0,0,TAU);g.ellipse(-3-ws,7,5.5,3.2,0,0,TAU);g.fill();
 g.fillStyle="#2a2f33";g.fillRect(8,-3.5,w.len,7);
+if(w.c==5){g.fillStyle="#b9c6c0";g.fillRect(8,-2,13,4);g.fillStyle="#7c8b86";g.fillRect(8,-3.5,5,7)}
 if(w.c==2){g.fillStyle="#6b4a2a";g.fillRect(20,-5,12,10)}
 if(w.c==3||w.c==1){g.fillStyle="#1a1f23";g.fillRect(8,-5,9,10)}
 if(w.c==4){g.fillStyle="#111";g.fillRect(18,-7,12,3.5)}
@@ -885,13 +911,13 @@ $("bw").addEventListener("click",function(){if(run)cycle(1)});$("bp").addEventLi
 $("br").addEventListener("click",function(){if(run)reload()});$("bpa").addEventListener("click",function(){if(run)setPause(!paused)});
 (function(){var sb=$("bsp");if(!sb)return;var sOn=function(e){e.preventDefault();keys.shift=true;sb.classList.add("on")},sOff=function(){keys.shift=false;sb.classList.remove("on")};sb.addEventListener("pointerdown",sOn);sb.addEventListener("pointerup",sOff);sb.addEventListener("pointercancel",sOff);sb.addEventListener("pointerleave",sOff)})();
 function menuShop(){if(run)return;if(!S)S=mkS();S.next=false;S.menu=1;S.tab="w";$("nx").textContent="Back";renderShop();$("shop").classList.remove("off")}
-async function start(){if(S)save();reset();paused=false;$("pz").classList.add("off");$("ov").classList.add("off");if(S.mode==16||S.mode==17)await goOnline();run=true;go()}
+async function start(){if(S)save();reset();paused=false;$("pz").classList.add("off");$("ov").classList.add("off");if(S.mode==16||S.mode==17)await goOnline();run=true;if(S.sv)aozStory();go()}
 function over(win){
 run=false;if(S.room){try{S.room.leave()}catch(e){}S.room=null}record(win);save();
 if(S.score>hi){hi=S.score;$("hi").textContent=hi;try{localStorage.setItem("zhi",hi)}catch(e){}}
 $("t").textContent=win?(S.mode==17?"You win!":"Time up!"):(S.mode==17?"Match over":"You went down");$("t").style.color=win?"#9be15d":"#c2362b";
 $("d").textContent="Mode "+MD[S.mode].n+(S.mode==3||S.mode==5||S.mode==17?"":" · reached wave "+S.wave)+" · "+S.score+" points. Best: "+hi+".";
-$("go").textContent="Play again";$("ov").classList.remove("off");dlBadge();
+$("go").textContent="Play again";$("ov").classList.remove("off");$("sto").className="";dlBadge();
 }
 function pos(e){var r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height,hx:(e.clientX-r.left)/r.width}}
 cv.addEventListener("pointerdown",function(e){
@@ -928,7 +954,7 @@ if(k.indexOf("arrow")==0||k==" ")e.preventDefault();
 window.addEventListener("keyup",function(e){keys[e.key.toLowerCase()]=false});
 window.addEventListener("blur",function(){keys={};mouse.down=false;if(run)setPause(true)});
 document.addEventListener("visibilitychange",function(){if(document.hidden&&run)setPause(true)});
-var MD=[{n:"Survival",d:"Fight off endless waves"},{n:"Horde",d:"Twice as many zombies, but weaker"},{n:"Boss Hunt",d:"One giant boss every wave"},{n:"3 Minutes",d:"Kill as many as you can in 180 seconds"},{n:"Hell",d:"Low HP, fast zombies, coins ×2, rain"},{n:"(removed)",d:""},{n:"One Touch",d:"Only 30 HP, damage ×2.5, score ×3"},{n:"Endless",d:"No breaks, zombies thicken over time"},{n:"Night of Horror",d:"Halloween: all pumpkin zombies, candy ×3, boss every 3 waves"},{n:"Practice",d:"Invulnerable, no rewards, try any gun"},{n:"Twin Boss",d:"Two bosses at once each wave, rewards ×1.4"},{n:"Blood Moon",d:"Permanent blood moon, boss every 5 waves"},{n:"Pet Squad",d:"Pets are 3× stronger, your damage drops to 40%"},{n:"Fog",d:"Tiny view radius, only zombie eyes visible, score ×1.6"},{n:"Fast Forward",d:"Everything runs 1.5× faster, score ×1.5"},{n:"Bomb Chain",d:"All bomber zombies, keep your distance"},{n:"Online · Co-op",d:"Shared room, revive teammates, team score (needs a room code)"},{n:"Online · Arena",d:"Shoot other players, first to 15 kills wins"},{n:"Safe Zone",d:"Stay in the light to score, lose HP outside, the zone keeps moving"},{n:"Elite",d:"Fewer zombies but all tough leaders, rewards ×1.5"},{n:"Hourglass",d:"Each wave has a timer, overrun and you bleed"},{n:"Ghosts",d:"All ghosts are semi-transparent and charge fast"}];
+var MD=[{n:"Survival",d:"Nothing but a rusty knife. Loot your way out of the fallen wall"},{n:"Horde",d:"Twice as many zombies, but weaker"},{n:"Boss Hunt",d:"One giant boss every wave"},{n:"3 Minutes",d:"Kill as many as you can in 180 seconds"},{n:"Hell",d:"Low HP, fast zombies, coins ×2, rain"},{n:"(removed)",d:""},{n:"One Touch",d:"Only 30 HP, damage ×2.5, score ×3"},{n:"Endless",d:"No breaks, zombies thicken over time"},{n:"Night of Horror",d:"Halloween: all pumpkin zombies, candy ×3, boss every 3 waves"},{n:"Practice",d:"Invulnerable, no rewards, try any gun"},{n:"Twin Boss",d:"Two bosses at once each wave, rewards ×1.4"},{n:"Blood Moon",d:"Permanent blood moon, boss every 5 waves"},{n:"Pet Squad",d:"Pets are 3× stronger, your damage drops to 40%"},{n:"Fog",d:"Tiny view radius, only zombie eyes visible, score ×1.6"},{n:"Fast Forward",d:"Everything runs 1.5× faster, score ×1.5"},{n:"Bomb Chain",d:"All bomber zombies, keep your distance"},{n:"Online · Co-op",d:"Shared room, revive teammates, team score (needs a room code)"},{n:"Online · Arena",d:"Shoot other players, first to 15 kills wins"},{n:"Safe Zone",d:"Stay in the light to score, lose HP outside, the zone keeps moving"},{n:"Elite",d:"Fewer zombies but all tough leaders, rewards ×1.5"},{n:"Hourglass",d:"Each wave has a timer, overrun and you bleed"},{n:"Ghosts",d:"All ghosts are semi-transparent and charge fast"}];
 var DB=null,UID=null,UU=null,cloudT=0,lbm=0;
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 /* ---- daily sign-in + missions ---- */
