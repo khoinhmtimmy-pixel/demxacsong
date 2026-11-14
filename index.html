@@ -1076,7 +1076,9 @@ if(HW){$("d").textContent+=" Halloween event: pumpkin-head zombies, candy and pu
 cv.addEventListener("contextmenu",function(e){e.preventDefault()});
 if(window.NET&&NET.attach)NET.attach({S:function(){return S},msg:msg,hud:hud,onDisconnect:function(){S.room=null;msg("Lost the room — continuing solo.")}});
 var MAT=[{n:"Scrap shard",c:"#8a9a94",r:.34},{n:"Energy core",c:"#4aa3ff",r:.072},{n:"Titan crystal",c:"#ff4fd8",r:.012}];
-var RARN=["Common","Rare","Epic","Legendary","Mythic","Cosmic","Limited"],RARC=["#8a9a94","#4aa3ff","#b66cff","#ffc83d","#ff4fd8","#7ee8ff","#ff8a1f"],RARL=[2,3,4,6,8,10,10];
+var RARN=["Common","Rare","Epic","Legendary","Mythic","Cosmic","Limited"],RARC=["#8a9a94","#4aa3ff","#b66cff","#ffc83d","#ff4fd8","#7ee8ff","#ff8a1f"],RARL=[2,3,4,6,8,10,10],RARODDS=[[36,32,20,8,3,1],[33,30,19,8,4,2,4]];
+function spinOdds(){return HW?RARODDS[1]:RARODDS[0]}
+function spinTier(){var p=spinOdds(),r=R()*100,acc=0;for(var i=0;i<p.length;i++){acc+=p[i];if(r<acc)return i}return p.length-1}
 function spinCost(){return[12,3,1]}
 function spinHave(){var m=S&&S.mats?S.mats:{};return[m[0]|0,m[1]|0,m[2]|0]}
 function canSpin(){var c=spinCost(),h=spinHave();return h[0]>=c[0]&&h[1]>=c[1]&&h[2]>=c[2]}
@@ -1097,7 +1099,7 @@ function spinMat(){var c=spinCost(),h=spinHave(),o="";
 for(var i=0;i<3;i++){o+='<div class="it" style="--rc:'+MAT[i].c+'"><h3>'+MAT[i].n+'</h3><p>'+(h[i]>=c[i]?"Ready":"Need more")+'</p><p><b>'+h[i]+'</b> / '+c[i]+'</p></div>'}
 return o}
 function spinHtml(){var r=S.spwin,S2=canSpin();
-var od=HW?"Event odds: Common +2 · 33% · Rare +3 · 30% · Epic +4 · 19% · Legendary +6 · 8% · Mythic +8 · 4% · Cosmic +10 · 2% · Limited +10 · 4%":"Odds: Common +2 · 36% · Rare +3 · 32% · Epic +4 · 20% · Legendary +6 · 8% · Mythic +8 · 3% · Cosmic +10 · 1%";
+var od=(HW?"Event odds: ":"Odds: "),op=spinOdds();for(var i=0;i<op.length;i++)od+=(i?" · ":"")+RARN[i]+" +"+RARL[i]+" · "+op[i]+"%";
 return '<p style="grid-column:1/-1;text-align:center;color:var(--gold)">Pick up materials from zombies and chests, then spin for a permanent upgrade.</p>'+
 '<p style="grid-column:1/-1;text-align:center;color:var(--gold);font-weight:800">'+od+'</p>'+
 '<div id="spmat" style="display:contents">'+spinMat()+'</div>'+
@@ -1126,7 +1128,7 @@ if(!keys.length){msg("Every upgrade is maxed");renderShop();return}
 if(!canSpin()){msg("Not enough materials");return}
 sfx("spin");
 var c=spinCost();for(var i=0;i<3;i++)S.mats[i]=(S.mats[i]|0)-c[i];
-var r=R(),j;if(HW)j=r<.33?0:r<.63?1:r<.82?2:r<.90?3:r<.94?4:r<.96?5:6;else j=r<.36?0:r<.68?1:r<.88?2:r<.96?3:r<.99?4:5;var need=RARL[j];
+var j=spinTier(),need=RARL[j];
 var pool=keys.filter(function(u){return 10-(S.lv[u.k]|0)>=need});
 if(!pool.length){pool=keys.slice().sort(function(a,b){return (S.lv[a.k]|0)-(S.lv[b.k]|0)}).slice(0,Math.max(1,Math.ceil(keys.length/3)))}
 var u=pool[R()*pool.length|0],got=Math.min(need,10-(S.lv[u.k]|0));
