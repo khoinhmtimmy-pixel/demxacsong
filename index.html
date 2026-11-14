@@ -178,12 +178,12 @@ background:linear-gradient(180deg,#d3ff9f,#7ccb42);box-shadow:0 4px 12px -4px #0
 <span style="text-align:center"><b id="wn"></b> <span id="am"></span><div id="bar"><i id="hp"></i></div><div id="abw"><i id="ab"></i></div></span>
 <span style="text-align:right">Coins <b class="c" id="co">0</b><br>Best <b id="hi">0</b></span>
 </div>
-<div id="mats"></div><div id="btns"><button id="bs">Shop (B)</button><button id="bw">Switch gun (Q/E)</button><button id="bp">Pet skill (F)</button><button id="br">Reload</button><button id="bsp">Sprint</button><button id="bpa">Pause</button></div><div id="btns2"><button id="bz">Bomb Z</button><button id="bx">Shield X</button><button id="bc">HP C</button><button id="bv">Speed V</button></div>
+<div id="mats"></div><div id="btns"><button id="bs">Shop (B)</button><button id="bw">Switch gun</button><button id="bp">Pet skill (F)</button><button id="br">Reload</button><button id="bsp">Sprint</button><button id="bpa">Pause</button></div><div id="btns2"><button id="bz">Bomb Z</button><button id="bx">Shield X</button><button id="bc">HP C</button><button id="bv">Speed V</button></div>
 <div id="ev"></div><div id="sto"></div><div id="rot">Rotate your phone for a bigger view</div><div id="msg"></div><div id="pz" class="off"><b>Paused</b><span>Press P or click to resume</span></div>
 <div id="ov" class="ov">
 <h1 id="t">AOZ: Attack on Zombies</h1>
 <p id="d">You are stranded in a vast abandoned town at midnight. Kill zombies to earn coins, then buy guns (500 of them) and upgrades in the shop. Find chests on the map and stand near them to open, or buy chests in the shop. Coins, guns and upgrades are saved between runs.</p>
-<p>Move: W A S D · Aim and shoot: mouse · Reload: R · Sprint: Shift · Pause: P<br>Switch gun: Q/E, mouse wheel or keys 1–5 (pick by class) · Shop: B (any time) · Pet skill: F · Items: Z X C V · Quick chat online: T<br>Phone: touch the left half to move, the right half to aim and shoot. The bottom buttons reload, sprint and pause.</p>
+<p>Move: W A S D · Aim and shoot: mouse · Reload: R · Sprint: Shift · Pause: P<br>Switch gun: Q, mouse wheel or keys 1–5 (pick by class) · Summon zombie: E · Shop: B (any time) · Pet skill: F · Items: Z X C V · Quick chat online: T<br>Phone: touch the left half to move, the right half to aim and shoot. The bottom buttons reload, sprint and pause.</p>
 <div id="modes"></div>
 <div id="diff"></div>
 <div id="acr"><input id="nick" maxlength="16" placeholder="Nickname"><input id="rc" maxlength="16" placeholder="Online room code"><span id="ac"></span></div>
@@ -476,6 +476,16 @@ if(S.mode==15&&zz.t==0){zz.t=7;zz.v*=1.4;zz.sk="#c85a3a";zz.cl="#7a1a10";zz.eye=
 if(zz.t==0&&S.wave>=3){var rr=R();if(S.wave>=4&&rr<.1){zz.t=5;zz.sk="#7acb3a";zz.cl="#2f5a2a";zz.eye="#caff3a";zz.v*=.85}else if(S.wave>=6&&rr<.18){zz.t=6;zz.r=17;zz.hp=zz.mx=zz.hp*3;zz.v*=.7;zz.cl="#4a4f55";zz.sk="#8a8f94"}else if(rr<.27){zz.t=7;zz.v*=1.5;zz.sk="#c85a3a";zz.cl="#7a1a10";zz.eye="#ffe000";zz.hp=zz.mx=Math.max(1,zz.hp*.6)}else if(S.wave>=5&&rr<.36){zz.t=8;zz.sk="#aab8e8";zz.cl="#3a3f6a";zz.eye="#ffffff";zz.cd=2}else if(S.wave>=7&&rr<.44){zz.t=9;zz.sk="#9fe0c0";zz.cl="#1f5a4a";zz.eye="#7dffb0";zz.hp=zz.mx=zz.hp*1.4}else if(S.wave>=8&&rr<.52){zz.t=10;zz.sk="#8a9aa8";zz.cl="#2c3a48";zz.eye="#ffd060";zz.hp=zz.mx=zz.hp*1.6;zz.v*=.85}else if(S.wave>=10&&rr<.6){zz.t=11;zz.sk="#d08ad8";zz.cl="#5a2a6a";zz.eye="#ffb0f0";zz.hp=zz.mx=zz.hp*1.8}else if(S.wave>=12&&rr<.68){zz.t=12;zz.sk="#e0b070";zz.cl="#6a3a1a";zz.eye="#fff070";zz.hp=zz.mx=zz.hp*1.2}else if(S.wave>=14&&rr<.76){zz.t=13;zz.sk="#a02a3a";zz.cl="#3a0a14";zz.eye="#ff2040";zz.v*=1.15}else if(S.wave>=9&&rr<.80){zz.t=14;zz.sk="#c88aff";zz.cl="#4a2a6a";zz.eye="#ffe0ff";zz.hp=zz.mx=zz.hp*1.15}else if(S.wave>=11&&rr<.85){zz.t=15;zz.sk="#9ad8b0";zz.cl="#1f4a3a";zz.eye="#7dffd0";zz.hp=zz.mx=zz.hp*1.3;zz.v*=.9}else if(S.wave>=13&&rr<.90){zz.t=16;zz.r=24;zz.sk="#6a6a78";zz.cl="#2a2d33";zz.eye="#ff8a3a";zz.hp=zz.mx=zz.hp*5;zz.v*=.5}else if(S.wave>=15&&rr<.95){zz.t=17;zz.sk="#9ac8ff";zz.cl="#20304a";zz.eye="#d0f0ff";zz.hp=zz.mx=Math.max(1,zz.hp*.7);zz.v*=1.3}else if(S.wave>=12&&rr<.975){zz.t=18;zz.r=26;zz.sk="#8a5a6a";zz.cl="#3a1a24";zz.eye="#ff3ad0";zz.hp=zz.mx=zz.hp*3.5;zz.v*=.8;zz.mut=15;zz.abn=1}}
 if((zz.t==0||zz.t==1)&&S.wave>=2&&R()<Math.min(.72,.16+S.wave*.015)){zz.mut=(R()<.55?1:0)|(R()<.5?2:0)|(R()<.45?4:0)|(R()<.3?8:0);if(!zz.mut)zz.mut=1;zz.abn=1;zz.lg=1+R()*2;zz.hp=zz.mx=Math.max(1,Math.round(zz.hp*1.15))}
 }
+var ZSUM_CD=60;
+function summonZ(){
+if(!run||!S||!S.p||S.dead>0||S.dn>0)return;
+if(S.room){msg("Summon works in solo only");return}
+if((S.zcd||0)>0){msg("Summon ready in "+Math.ceil(S.zcd)+"s");return}
+var a=R()*TAU,d=260;
+var z=mini(Math.max(30,Math.min(WW-30,S.p.x+Math.cos(a)*d)),Math.max(30,Math.min(WH-30,S.p.y+Math.sin(a)*d)));
+S.z.push(z);S.zcd=ZSUM_CD;
+msg("Zombie summoned — E ready in "+ZSUM_CD+"s");sfx("click",{v:.5});
+}
 function swing(w){var p=S.p;
 p.cd=w.cd*(1-.05*S.lv.rate-.05*S.hw.hwcd)*(S.haste>0?.75:1);S.shake=5;sfx("swing");
 S.sw.push({x:p.x+Math.cos(p.a)*(w.reach*.55),y:p.y+Math.sin(p.a)*(w.reach*.55),t:.3,r:0,sm:3});
@@ -561,7 +571,7 @@ if(c.o>0&&!op){g.strokeStyle="#9be15d";g.lineWidth=3;g.beginPath();g.arc(x,y-2,2
 else if(!op&&Math.hypot(x-S.p.x,y-S.p.y)<80){g.fillStyle="#fff";g.font="800 11px 'Be Vietnam Pro',sans-serif";g.textAlign="center";g.fillText(translateText("Stand near to open"),x,y-34)}}
 function segd(px,py,ax,ay,bx,by){var dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/l)):0;return Math.hypot(px-ax-t*dx,py-ay-t*dy)}
 /* ---- update ---- */
-function update(dt){if(S.mode==14)dt*=1.5;
+function update(dt){if(S.mode==14)dt*=1.5;if(S.zcd>0)S.zcd=Math.max(0,S.zcd-dt);
 var p=S.p,mx=0,my=0;
 if(keys.a||keys.arrowleft)mx--;if(keys.d||keys.arrowright)mx++;
 if(keys.w||keys.arrowup)my--;if(keys.s||keys.arrowdown)my++;
@@ -969,7 +979,7 @@ if(e.target&&e.target.tagName=="INPUT")return;
 var k=e.key.toLowerCase();keys[k]=true;
 if(k=="p"||k=="escape"){setPause(!paused);e.preventDefault()}
 if(paused)return;
-if(run){if(k=="r")reload();if(k=="f")petSkill();if(k=="t")emote();if(k=="z")useItem("bomb");if(k=="x")useItem("shield");if(k=="c")useItem("heal");if(k=="v")useItem("haste");if(k=="q")cycle(-1);if(k=="e")cycle(1);if("12345".indexOf(k)>=0&&k.length==1)equip(best(+k-1));if(k=="b")openShop(false)}
+if(run){if(k=="r")reload();if(k=="f")petSkill();if(k=="t")emote();if(k=="z")useItem("bomb");if(k=="x")useItem("shield");if(k=="c")useItem("heal");if(k=="v")useItem("haste");if(k=="q")cycle(-1);if(k=="e")summonZ();if("12345".indexOf(k)>=0&&k.length==1)equip(best(+k-1));if(k=="b")openShop(false)}
 else if(k=="b"&&S&&!$("shop").classList.contains("off"))closeShop();
 if(k.indexOf("arrow")==0||k==" ")e.preventDefault();
 });
@@ -1076,7 +1086,7 @@ if(HW){$("d").textContent+=" Halloween event: pumpkin-head zombies, candy and pu
 cv.addEventListener("contextmenu",function(e){e.preventDefault()});
 if(window.NET&&NET.attach)NET.attach({S:function(){return S},msg:msg,hud:hud,onDisconnect:function(){S.room=null;msg("Lost the room — continuing solo.")}});
 var MAT=[{n:"Scrap shard",c:"#8a9a94",r:.34},{n:"Energy core",c:"#4aa3ff",r:.072},{n:"Titan crystal",c:"#ff4fd8",r:.012}];
-var RARN=["Common","Rare","Epic","Legendary","Mythic","Cosmic","Limited"],RARC=["#8a9a94","#4aa3ff","#b66cff","#ffc83d","#ff4fd8","#7ee8ff","#ff8a1f"],RARL=[2,3,4,6,8,10,10],RARODDS=[[36,32,20,8,3,1],[33,30,19,8,4,2,4]];
+var RARN=["Common","Rare","Epic","Legendary","Mythic","Cosmic","Limited"],RARC=["#8a9a94","#4aa3ff","#b66cff","#ffc83d","#ff4fd8","#7ee8ff","#ff8a1f"],RARL=[3,4,5,7,8,10,10],RARODDS=[[36,32,20,8,3,1],[33,30,19,8,4,2,4]];
 function spinOdds(){return HW?RARODDS[1]:RARODDS[0]}
 function spinTier(){var p=spinOdds(),r=R()*100,acc=0;for(var i=0;i<p.length;i++){acc+=p[i];if(r<acc)return i}return p.length-1}
 function spinCost(){return[12,3,1]}
